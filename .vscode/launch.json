@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Factory (Gradle Run)",
+            "request": "launch",
+            "mainClass": "person.wangchen11.factory.DesktopLauncher",
+            "preLaunchTask": "gradle-run-desktop"
+        },
+        {
+            "type": "java",
+            "name": "Factory (Desktop - 自动关联)",
+            "request": "launch",
+            "mainClass": "person.wangchen11.factory.DesktopLauncher",
+            "cwd": "${workspaceFolder}/assets",
+            "vmArgs": "-XstartOnFirstThread",
+            "preLaunchTask": "gradle-classes"
+        }
+    ]
+}
