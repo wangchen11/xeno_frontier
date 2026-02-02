@@ -1,0 +1,154 @@
+{
+  "basic_farm": {
+    "id": "basic_farm",
+    "name": "基础农场",
+    "description": "用于种植作物的基础建筑",
+    "type": "production",
+    "category": "farm",
+    "cost": {
+      "wood": 50,
+      "stone": 20
+    },
+    "effects": {
+      "crop_growth_speed": 1.2
+    },
+    "upgradePath": ["advanced_farm"],
+    "buildTime": 2,
+    "width": 2,
+    "height": 2
+  },
+  "advanced_farm": {
+    "id": "advanced_farm",
+    "name": "高级农场",
+    "description": "效率更高的农场",
+    "type": "production",
+    "category": "farm",
+    "cost": {
+      "wood": 100,
+      "stone": 50,
+      "metal": 30
+    },
+    "effects": {
+      "crop_growth_speed": 1.5,
+      "crop_yield": 1.2
+    },
+    "upgradePath": ["super_farm"],
+    "buildTime": 3,
+    "width": 2,
+    "height": 2
+  },
+  "super_farm": {
+    "id": "super_farm",
+    "name": "超级农场",
+    "description": "最高级的农场",
+    "type": "production",
+    "category": "farm",
+    "cost": {
+      "wood": 200,
+      "stone": 100,
+      "metal": 100,
+      "energy": 50
+    },
+    "effects": {
+      "crop_growth_speed": 2.0,
+      "crop_yield": 1.5
+    },
+    "buildTime": 5,
+    "width": 3,
+    "height": 3
+  },
+  "basic_mine": {
+    "id": "basic_mine",
+    "name": "基础矿场",
+    "description": "用于开采矿石的基础建筑",
+    "type": "production",
+    "category": "mine",
+    "cost": {
+      "wood": 80,
+      "stone": 100
+    },
+    "effects": {
+      "mining_speed": 1.0
+    },
+    "upgradePath": ["advanced_mine"],
+    "buildTime": 3,
+    "width": 2,
+    "height": 2
+  },
+  "laser_turret": {
+    "id": "laser_turret",
+    "name": "激光炮塔",
+    "description": "发射激光攻击敌人",
+    "type": "defense",
+    "category": "turret",
+    "cost": {
+      "wood": 50,
+      "stone": 30,
+      "metal": 50,
+      "energy": 20
+    },
+    "effects": {
+      "damage": 50,
+      "range": 150,
+      "fire_rate": 1.0
+    },
+    "buildTime": 2,
+    "width": 1,
+    "height": 1
+  },
+  "machine_gun_turret": {
+    "id": "machine_gun_turret",
+    "name": "机枪炮塔",
+    "description": "持续射击敌人",
+    "type": "defense",
+    "category": "turret",
+    "cost": {
+      "wood": 30,
+      "stone": 20,
+      "metal": 30
+    },
+    "effects": {
+      "damage": 20,
+      "range": 100,
+      "fire_rate": 5.0
+    },
+    "buildTime": 1,
+    "width": 1,
+    "height": 1
+  },
+  "wall": {
+    "id": "wall",
+    "name": "防御墙",
+    "description": "阻挡敌人前进",
+    "type": "defense",
+    "category": "wall",
+    "cost": {
+      "stone": 20
+    },
+    "effects": {
+      "health": 200
+    },
+    "buildTime": 0.5,
+    "width": 1,
+    "height": 1
+  },
+  "command_center": {
+    "id": "command_center",
+    "name": "指挥中心",
+    "description": "基地的核心建筑",
+    "type": "function",
+    "category": "core",
+    "cost": {
+      "wood": 200,
+      "stone": 150,
+      "metal": 100
+    },
+    "effects": {
+      "building_limit": 10
+    },
+    "upgradePath": ["advanced_command_center"],
+    "buildTime": 5,
+    "width": 3,
+    "height": 3
+  }
+}

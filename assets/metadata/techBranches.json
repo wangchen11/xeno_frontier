@@ -1,0 +1,32 @@
+{
+  "basic": {
+    "id": "basic",
+    "name": "基础科技",
+    "description": "最基础的科技分支",
+    "techIds": ["basic_tech"]
+  },
+  "agriculture": {
+    "id": "agriculture",
+    "name": "农业科技",
+    "description": "关于农业和种植的科技",
+    "techIds": ["advanced_farming", "hydroponics", "genetic_modification"]
+  },
+  "industry": {
+    "id": "industry",
+    "name": "工业科技",
+    "description": "关于工业和生产的科技",
+    "techIds": ["advanced_mining", "energy_tech"]
+  },
+  "military": {
+    "id": "military",
+    "name": "军事科技",
+    "description": "关于防御和武器的科技",
+    "techIds": ["advanced_weapons", "energy_shields"]
+  },
+  "science": {
+    "id": "science",
+    "name": "科研科技",
+    "description": "关于研究和探索的科技",
+    "techIds": ["alien_research", "ancient_tech"]
+  }
+}

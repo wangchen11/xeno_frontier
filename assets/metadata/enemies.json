@@ -1,0 +1,137 @@
+{
+  "basic_enemy": {
+    "id": "basic_enemy",
+    "name": "基础异形",
+    "description": "最基础的异形敌人",
+    "type": "enemy",
+    "category": "basic",
+    "health": 100,
+    "damage": 20,
+    "speed": 50,
+    "attackRange": 20,
+    "attackType": "melee",
+    "drops": [
+      {
+        "itemId": "alien_flesh",
+        "quantity": 1,
+        "chance": 1.0
+      }
+    ]
+  },
+  "fast_enemy": {
+    "id": "fast_enemy",
+    "name": "快速异形",
+    "description": "速度快的异形敌人",
+    "type": "enemy",
+    "category": "fast",
+    "health": 50,
+    "damage": 15,
+    "speed": 100,
+    "attackRange": 15,
+    "attackType": "melee",
+    "drops": [
+      {
+        "itemId": "alien_flesh",
+        "quantity": 1,
+        "chance": 1.0
+      },
+      {
+        "itemId": "alien_blood",
+        "quantity": 1,
+        "chance": 0.5
+      }
+    ]
+  },
+  "strong_enemy": {
+    "id": "strong_enemy",
+    "name": "强壮异形",
+    "description": "生命值高的异形敌人",
+    "type": "enemy",
+    "category": "strong",
+    "health": 200,
+    "damage": 30,
+    "speed": 30,
+    "attackRange": 25,
+    "attackType": "melee",
+    "drops": [
+      {
+        "itemId": "alien_flesh",
+        "quantity": 2,
+        "chance": 1.0
+      },
+      {
+        "itemId": "alien_blood",
+        "quantity": 1,
+        "chance": 0.8
+      },
+      {
+        "itemId": "alien_bone",
+        "quantity": 1,
+        "chance": 0.5
+      }
+    ]
+  },
+  "ranged_enemy": {
+    "id": "ranged_enemy",
+    "name": "远程异形",
+    "description": "远程攻击的异形敌人",
+    "type": "enemy",
+    "category": "ranged",
+    "health": 80,
+    "damage": 25,
+    "speed": 40,
+    "attackRange": 80,
+    "attackType": "ranged",
+    "drops": [
+      {
+        "itemId": "alien_flesh",
+        "quantity": 1,
+        "chance": 1.0
+      },
+      {
+        "itemId": "alien_eye",
+        "quantity": 1,
+        "chance": 0.5
+      }
+    ]
+  },
+  "boss_enemy": {
+    "id": "boss_enemy",
+    "name": "异形BOSS",
+    "description": "强大的异形BOSS",
+    "type": "enemy",
+    "category": "boss",
+    "health": 1000,
+    "damage": 50,
+    "speed": 20,
+    "attackRange": 30,
+    "attackType": "melee",
+    "drops": [
+      {
+        "itemId": "alien_flesh",
+        "quantity": 10,
+        "chance": 1.0
+      },
+      {
+        "itemId": "alien_blood",
+        "quantity": 5,
+        "chance": 1.0
+      },
+      {
+        "itemId": "alien_bone",
+        "quantity": 3,
+        "chance": 1.0
+      },
+      {
+        "itemId": "alien_core",
+        "quantity": 1,
+        "chance": 1.0
+      }
+    ],
+    "specialAbilities": [
+      "ground_slam",
+      "acid_spit",
+      "summon_minions"
+    ]
+  }
+}
