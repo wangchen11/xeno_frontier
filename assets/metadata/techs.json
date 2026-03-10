@@ -1,120 +1,119 @@
 {
   "basic_tech": {
     "id": "basic_tech",
-    "name": "基础科技",
-    "description": "最基础的科技知识",
+    "name": "Colony Basics",
+    "description": "Basic survival knowledge for the crash site.",
     "branch": "basic",
     "effects": {},
-    "cost": 0
+    "cost": 0,
+    "unlocks": ["basic_farm", "basic_mine", "machine_gun_turret", "wall", "basic_crop", "energy_crop"]
   },
   "advanced_farming": {
     "id": "advanced_farming",
-    "name": "高级农业",
-    "description": "提高作物生长速度和产量",
+    "name": "Advanced Farming",
+    "description": "Unlocks stronger farming infrastructure.",
     "branch": "agriculture",
     "effects": {
-      "crop_growth_speed": 1.2,
-      "crop_yield": 1.1
+      "crop_growth_speed": 1.2
     },
     "prerequisites": ["basic_tech"],
-    "cost": 10,
-    "unlocks": ["advanced_farm"]
+    "cost": 8,
+    "unlocks": ["advanced_farm", "metal_crop"]
   },
   "hydroponics": {
     "id": "hydroponics",
-    "name": "无土栽培",
-    "description": "解锁无土栽培技术",
+    "name": "Hydroponics",
+    "description": "Optimizes alien crop handling.",
     "branch": "agriculture",
     "effects": {
-      "crop_growth_speed": 1.5
+      "crop_growth_speed": 1.4
     },
     "prerequisites": ["advanced_farming"],
-    "cost": 20,
-    "unlocks": ["hydroponic_farm"]
+    "cost": 14,
+    "unlocks": ["defense_crop", "healing_crop"]
   },
   "genetic_modification": {
     "id": "genetic_modification",
-    "name": "基因改良",
-    "description": "改良作物基因",
+    "name": "Genetic Modification",
+    "description": "Unlocks high-end agricultural modules.",
     "branch": "agriculture",
     "effects": {
-      "crop_yield": 1.5,
-      "crop_quality": 1.2
+      "crop_yield": 1.4
     },
     "prerequisites": ["hydroponics"],
-    "cost": 30,
-    "unlocks": ["genetic_lab"]
+    "cost": 22,
+    "unlocks": ["super_farm"]
   },
   "advanced_mining": {
     "id": "advanced_mining",
-    "name": "高级采矿",
-    "description": "提高矿石开采速度",
+    "name": "Advanced Mining",
+    "description": "Improves extraction and unlocks better mining structures.",
     "branch": "industry",
     "effects": {
       "mining_speed": 1.5
     },
     "prerequisites": ["basic_tech"],
-    "cost": 15,
-    "unlocks": ["advanced_mine"]
+    "cost": 10,
+    "unlocks": ["advanced_mine", "resource_depot"]
   },
   "energy_tech": {
     "id": "energy_tech",
-    "name": "能源科技",
-    "description": "提高能源产量",
+    "name": "Energy Systems",
+    "description": "Improves power generation and support buildings.",
     "branch": "industry",
     "effects": {
       "energy_production": 1.5
     },
-    "prerequisites": ["basic_tech"],
-    "cost": 20,
-    "unlocks": ["solar_panel"]
+    "prerequisites": ["advanced_mining"],
+    "cost": 14,
+    "unlocks": ["communication_tower", "medical_bay"]
   },
   "advanced_weapons": {
     "id": "advanced_weapons",
-    "name": "高级武器",
-    "description": "解锁更高级的防御武器",
+    "name": "Advanced Weapons",
+    "description": "Unlocks stronger anti-alien defenses.",
     "branch": "military",
     "effects": {
       "weapon_damage": 1.3
     },
     "prerequisites": ["basic_tech"],
-    "cost": 25,
+    "cost": 12,
     "unlocks": ["laser_turret"]
   },
   "energy_shields": {
     "id": "energy_shields",
-    "name": "能量护盾",
-    "description": "解锁能量屏障技术",
+    "name": "Heavy Ordnance",
+    "description": "Unlocks heavy explosive defense platforms.",
     "branch": "military",
     "effects": {
-      "shield_strength": 200
+      "weapon_damage": 1.6
     },
-    "prerequisites": ["energy_tech", "advanced_weapons"],
-    "cost": 40,
-    "unlocks": ["energy_shield"]
+    "prerequisites": ["advanced_weapons", "energy_tech"],
+    "cost": 20,
+    "unlocks": ["rocket_launcher"]
   },
   "alien_research": {
     "id": "alien_research",
-    "name": "异形研究",
-    "description": "研究异形生物",
+    "name": "Alien Research",
+    "description": "Allows advanced analysis of alien remains.",
     "branch": "science",
     "effects": {
-      "alien_knowledge": 1.0
+      "research_gain": 1.2
     },
     "prerequisites": ["basic_tech"],
-    "cost": 30,
-    "unlocks": ["alien_lab"]
+    "cost": 12,
+    "unlocks": ["trading_post"]
   },
   "ancient_tech": {
     "id": "ancient_tech",
-    "name": "古代科技",
-    "description": "研究古代外星文明技术",
+    "name": "Ancient Tech",
+    "description": "Unlocks the most advanced extractor technology.",
     "branch": "science",
     "effects": {
-      "tech_research_speed": 1.5
+      "research_speed": 1.5
     },
-    "prerequisites": ["alien_research"],
-    "cost": 50,
-    "unlocks": ["ancient_relic"]
+    "prerequisites": ["alien_research", "energy_tech"],
+    "cost": 24,
+    "unlocks": ["super_mine"]
   }
 }

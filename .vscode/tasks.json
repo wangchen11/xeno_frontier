@@ -1,20 +1,59 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "gradle-classes",
-            "type": "shell",
-            "command": "./gradlew.bat core:classes desktop:classes",
-            "group": "build"
-        },
-        {
-            "label": "gradle-run-desktop",
-            "type": "shell",
-            "command": "./gradlew.bat desktop:run",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            }
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "gradle desktop:run",
+      "type": "shell",
+      "command": ".\\gradlew.bat",
+      "args": [
+        "desktop:run"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "gradle desktop:debug",
+      "type": "shell",
+      "command": ".\\gradlew.bat",
+      "args": [
+        "desktop:debug"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "gradle core:compileKotlin",
+      "type": "shell",
+      "command": ".\\gradlew.bat",
+      "args": [
+        "core:compileKotlin"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
 }

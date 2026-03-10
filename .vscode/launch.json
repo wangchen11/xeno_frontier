@@ -1,22 +1,19 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        
-        {
-            "type": "java",
-            "name": "Factory (Gradle Run)",
-            "request": "launch",
-            "mainClass": "person.wangchen11.factory.DesktopLauncher",
-            "preLaunchTask": "gradle-run-desktop"
-        },
-        {
-            "type": "java",
-            "name": "Factory (Desktop - 自动关联)",
-            "request": "launch",
-            "mainClass": "person.wangchen11.factory.DesktopLauncher",
-            "cwd": "${workspaceFolder}/assets",
-            "vmArgs": "-XstartOnFirstThread",
-            "preLaunchTask": "gradle-classes"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Desktop via Gradle",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": ".\\gradlew.bat desktop:run",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Desktop via Gradle",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": ".\\gradlew.bat desktop:debug",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
 }

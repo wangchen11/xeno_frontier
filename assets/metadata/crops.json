@@ -1,22 +1,22 @@
 {
   "basic_crop": {
     "id": "basic_crop",
-    "name": "基础作物",
-    "description": "最基础的外星作物",
+    "name": "Nutripod",
+    "description": "Fast basic crop that feeds the colony.",
     "type": "crop",
     "category": "food",
     "growthTime": 10,
-    "yield": 5,
+    "yield": 6,
     "sellPrice": 10
   },
   "energy_crop": {
     "id": "energy_crop",
-    "name": "能量作物",
-    "description": "可以提取能量的作物",
+    "name": "Sun Bloom",
+    "description": "Converts light into energy cells.",
     "type": "crop",
     "category": "energy",
-    "growthTime": 15,
-    "yield": 3,
+    "growthTime": 14,
+    "yield": 4,
     "sellPrice": 20,
     "effects": {
       "energy_production": 5
@@ -24,12 +24,12 @@
   },
   "metal_crop": {
     "id": "metal_crop",
-    "name": "金属作物",
-    "description": "含有金属成分的作物",
+    "name": "Ferron Reed",
+    "description": "A mineral plant used to reinforce your industry.",
     "type": "crop",
     "category": "material",
-    "growthTime": 20,
-    "yield": 2,
+    "growthTime": 18,
+    "yield": 3,
     "sellPrice": 30,
     "effects": {
       "metal_production": 2
@@ -37,12 +37,12 @@
   },
   "defense_crop": {
     "id": "defense_crop",
-    "name": "防御作物",
-    "description": "具有防御功能的作物",
+    "name": "Spine Pod",
+    "description": "Defensive specimen that boosts research when harvested.",
     "type": "crop",
     "category": "defense",
     "growthTime": 12,
-    "yield": 1,
+    "yield": 2,
     "sellPrice": 25,
     "effects": {
       "defense_bonus": 10
@@ -50,12 +50,12 @@
   },
   "healing_crop": {
     "id": "healing_crop",
-    "name": "治疗作物",
-    "description": "具有治疗效果的作物",
+    "name": "Med Moss",
+    "description": "Slow medical crop that helps restore colony integrity.",
     "type": "crop",
     "category": "medical",
-    "growthTime": 18,
-    "yield": 2,
+    "growthTime": 16,
+    "yield": 3,
     "sellPrice": 40,
     "effects": {
       "healing_power": 50

@@ -1,10 +1,10 @@
 {
   "plain": {
     "id": "plain",
-    "name": "平原",
-    "description": "开阔的平原地形",
+    "name": "Plain",
+    "description": "Safe open ground, ideal for expansion.",
     "resourceDistribution": {
-      "wood": 0.3,
+      "wood": 0.2,
       "stone": 0.2,
       "metal": 0.1
     },
@@ -17,84 +17,80 @@
   },
   "forest": {
     "id": "forest",
-    "name": "森林",
-    "description": "茂密的森林地形",
+    "name": "Forest",
+    "description": "Dense alien growth with rich biomass.",
     "resourceDistribution": {
       "wood": 0.8,
-      "stone": 0.3,
-      "metal": 0.2
+      "stone": 0.2,
+      "metal": 0.1
     },
     "environmentalEffects": {
-      "movement_speed": 0.8,
+      "movement_speed": 0.9,
       "visibility": 0.7
     },
-    "movementCost": 1.2,
+    "movementCost": 1.1,
     "buildable": true
   },
   "mountain": {
     "id": "mountain",
-    "name": "山地",
-    "description": "崎岖的山地地形",
+    "name": "Mountain",
+    "description": "Rocky high ground rich in ore but bad for building.",
     "resourceDistribution": {
-      "wood": 0.1,
+      "wood": 0.0,
       "stone": 0.7,
       "metal": 0.6
     },
     "environmentalEffects": {
-      "movement_speed": 0.5,
-      "visibility": 0.9
+      "movement_speed": 0.6,
+      "visibility": 1.1
     },
-    "movementCost": 1.5,
+    "movementCost": 1.4,
     "buildable": false
   },
   "desert": {
     "id": "desert",
-    "name": "沙漠",
-    "description": "干燥的沙漠地形",
+    "name": "Desert",
+    "description": "Harsh but mostly buildable terrain with decent minerals.",
     "resourceDistribution": {
       "wood": 0.0,
       "stone": 0.4,
       "metal": 0.3
     },
     "environmentalEffects": {
-      "movement_speed": 0.9,
-      "visibility": 1.2,
-      "heat": 1.0
+      "movement_speed": 0.95,
+      "visibility": 1.2
     },
     "movementCost": 1.1,
     "buildable": true
   },
   "swamp": {
     "id": "swamp",
-    "name": "沼泽",
-    "description": "潮湿的沼泽地形",
+    "name": "Swamp",
+    "description": "Toxic wetland, dangerous and not buildable.",
     "resourceDistribution": {
-      "wood": 0.4,
+      "wood": 0.3,
       "stone": 0.1,
-      "metal": 0.2
+      "metal": 0.1
     },
     "environmentalEffects": {
-      "movement_speed": 0.6,
-      "visibility": 0.6,
-      "poison": 0.5
+      "movement_speed": 0.7,
+      "visibility": 0.6
     },
-    "movementCost": 1.4,
+    "movementCost": 1.5,
     "buildable": false
   },
   "lava": {
     "id": "lava",
-    "name": "熔岩",
-    "description": "危险的熔岩地形",
+    "name": "Lava",
+    "description": "Extreme geothermal zone with rich ore and no safety.",
     "resourceDistribution": {
       "wood": 0.0,
-      "stone": 0.0,
+      "stone": 0.1,
       "metal": 0.9
     },
     "environmentalEffects": {
-      "movement_speed": 0.3,
-      "visibility": 0.8,
-      "heat": 2.0,
-      "damage": 1.0
+      "movement_speed": 0.4,
+      "visibility": 0.8
     },
     "movementCost": 2.0,
     "buildable": false

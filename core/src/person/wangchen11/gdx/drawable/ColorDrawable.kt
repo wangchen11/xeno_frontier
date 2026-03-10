@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.scenes.scene2d.utils.BaseDrawable
 
-class ColorDrawable(val color: Color): BaseDrawable() {
+class ColorDrawable(val color: Color, val cornerRadius: Float = 0f): BaseDrawable() {
     companion object {
         private val emptyTexture = Texture(0,0,Pixmap.Format.RGBA8888)
         private val shaderProgram = ShaderProgram(

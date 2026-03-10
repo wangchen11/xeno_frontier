@@ -1,73 +1,38 @@
 {
   "tree": {
     "id": "tree",
-    "name": "外星树",
-    "description": "常见的外星树木",
+    "name": "Alien Tree",
+    "description": "A fibrous alien tree rich in biomass.",
     "type": "terrain_object",
     "effects": {
       "resource": "wood",
       "quantity": 3
     },
     "interactable": true,
-    "interactionMethod": "chop"
+    "interactionMethod": "gather"
   },
   "rock": {
     "id": "rock",
-    "name": "岩石",
-    "description": "常见的岩石",
+    "name": "Rock Deposit",
+    "description": "Surface stone deposit.",
     "type": "terrain_object",
     "effects": {
       "resource": "stone",
       "quantity": 2
     },
     "interactable": true,
-    "interactionMethod": "mine"
+    "interactionMethod": "gather"
   },
   "metal_ore": {
     "id": "metal_ore",
-    "name": "金属矿",
-    "description": "含有金属的矿石",
+    "name": "Metal Vein",
+    "description": "Shallow metal-bearing formation.",
     "type": "terrain_object",
     "effects": {
       "resource": "metal",
-      "quantity": 1
+      "quantity": 2
     },
     "interactable": true,
-    "interactionMethod": "mine"
-  },
-  "alien_plant": {
-    "id": "alien_plant",
-    "name": "外星植物",
-    "description": "奇特的外星植物",
-    "type": "terrain_object",
-    "effects": {
-      "resource": "alien_plant",
-      "quantity": 1
-    },
-    "interactable": true,
-    "interactionMethod": "harvest"
-  },
-  "ancient_statue": {
-    "id": "ancient_statue",
-    "name": "古代雕像",
-    "description": "古老的外星文明雕像",
-    "type": "terrain_object",
-    "effects": {
-      "research_points": 5
-    },
-    "interactable": true,
-    "interactionMethod": "examine"
-  },
-  "alien_nest": {
-    "id": "alien_nest",
-    "name": "异形巢穴",
-    "description": "异形的巢穴",
-    "type": "terrain_object",
-    "effects": {
-      "danger_level": 5,
-      "reward": "high"
-    },
-    "interactable": true,
-    "interactionMethod": "destroy"
+    "interactionMethod": "gather"
   }
 }

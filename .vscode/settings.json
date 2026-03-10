@@ -1,0 +1,6 @@
+{
+  "java.import.gradle.enabled": true,
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.debug.settings.onBuildFailureProceed": true,
+  "terminal.integrated.cwd": "${workspaceFolder}"
+}

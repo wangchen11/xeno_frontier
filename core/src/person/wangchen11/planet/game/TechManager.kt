@@ -7,6 +7,8 @@ import person.wangchen11.planet.metadata.TechModel
  * 科技管理器
  */
 object TechManager {
+    private val defaultUnlockedBuildings = setOf("basic_farm", "basic_mine", "machine_gun_turret", "wall", "command_center")
+    private val defaultUnlockedCrops = setOf("basic_crop", "energy_crop")
     private val researchedTechs = mutableSetOf<String>()
     private var researchPoints = 0
 
@@ -97,5 +99,23 @@ object TechManager {
             !isTechResearched(tech.id) &&
                     tech.prerequisites?.all { isTechResearched(it) } ?: true
         }
+    }
+
+    fun isBuildingUnlocked(buildingId: String): Boolean {
+        if (buildingId in defaultUnlockedBuildings) return true
+        return researchedTechs
+            .asSequence()
+            .mapNotNull { MetadataManager.getTech(it) }
+            .flatMap { it.unlocks.orEmpty().asSequence() }
+            .any { it == buildingId }
+    }
+
+    fun isCropUnlocked(cropId: String): Boolean {
+        if (cropId in defaultUnlockedCrops) return true
+        return researchedTechs
+            .asSequence()
+            .mapNotNull { MetadataManager.getTech(it) }
+            .flatMap { it.unlocks.orEmpty().asSequence() }
+            .any { it == cropId }
     }
 }

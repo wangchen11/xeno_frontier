@@ -1,86 +1,74 @@
 package person.wangchen11.planet.game
 
-/**
- * 资源管理器
- */
 object ResourceManager {
     private val resources = mutableMapOf<String, Int>()
+    private val fractionalProduction = mutableMapOf<String, Float>()
 
-    /**
-     * 初始化资源
-     */
     fun initialize() {
-        // 初始资源
-        resources["wood"] = 100
-        resources["stone"] = 100
-        resources["metal"] = 50
-        resources["energy"] = 50
-        resources["food"] = 50
+        resources.clear()
+        resources["wood"] = 160
+        resources["stone"] = 120
+        resources["metal"] = 80
+        resources["energy"] = 60
+        resources["food"] = 80
+        fractionalProduction.clear()
     }
 
-    /**
-     * 重置资源
-     */
     fun reset() {
         resources.clear()
+        fractionalProduction.clear()
     }
 
-    /**
-     * 获取资源数量
-     */
-    fun getResource(resourceId: String): Int {
-        return resources.getOrDefault(resourceId, 0)
-    }
+    fun getResource(resourceId: String): Int = resources.getOrDefault(resourceId, 0)
 
-    /**
-     * 增加资源
-     */
     fun addResource(resourceId: String, amount: Int) {
         resources[resourceId] = getResource(resourceId) + amount
     }
 
-    /**
-     * 消耗资源
-     */
     fun consumeResource(cost: Map<String, Int>): Boolean {
-        // 检查是否有足够的资源
-        for ((resourceId, amount) in cost) {
-            if (getResource(resourceId) < amount) {
-                return false
-            }
-        }
-
-        // 消耗资源
-        for ((resourceId, amount) in cost) {
-            resources[resourceId] = getResource(resourceId) - amount
-        }
-
-        return true
-    }
-
-    /**
-     * 消耗指定数量的资源
-     */
-    fun consumeResource(resourceId: String, amount: Int): Boolean {
-        if (getResource(resourceId) < amount) {
+        if (cost.any { getResource(it.key) < it.value }) {
             return false
         }
-        resources[resourceId] = getResource(resourceId) - amount
+        cost.forEach { (resourceId, amount) ->
+            resources[resourceId] = getResource(resourceId) - amount
+        }
         return true
     }
 
-    /**
-     * 获取所有资源
-     */
-    fun getAllResources(): Map<String, Int> {
-        return resources
+    fun getAllResources(): Map<String, Int> = resources
+
+    fun update(delta: Float) {
+        BuildingManager.getAllBuildings()
+            .filter { it.isCompleted() }
+            .forEach { building ->
+                when (building.model.id) {
+                    "basic_farm" -> produce("food", 1.2f * delta)
+                    "advanced_farm" -> produce("food", 2.2f * delta)
+                    "super_farm" -> produce("food", 3.8f * delta)
+                    "basic_mine" -> {
+                        produce("stone", 1.0f * delta)
+                        produce("metal", 0.4f * delta)
+                    }
+                    "advanced_mine" -> {
+                        produce("stone", 1.6f * delta)
+                        produce("metal", 0.9f * delta)
+                    }
+                    "super_mine" -> {
+                        produce("stone", 2.4f * delta)
+                        produce("metal", 1.4f * delta)
+                    }
+                    "command_center" -> produce("energy", 0.5f * delta)
+                    "communication_tower" -> produce("energy", 0.2f * delta)
+                }
+            }
     }
 
-    /**
-     * 更新资源（例如生产建筑产生的资源）
-     */
-    fun update(delta: Float) {
-        // 这里可以添加资源自动增长的逻辑
-        // 例如，根据建筑的生产效率增加资源
+    private fun produce(resourceId: String, amount: Float) {
+        val total = fractionalProduction.getOrDefault(resourceId, 0f) + amount
+        val whole = total.toInt()
+        fractionalProduction[resourceId] = total - whole
+        if (whole > 0) {
+            addResource(resourceId, whole)
+        }
     }
 }

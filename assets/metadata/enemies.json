@@ -1,137 +1,146 @@
 {
   "basic_enemy": {
     "id": "basic_enemy",
-    "name": "基础异形",
-    "description": "最基础的异形敌人",
+    "name": "Ripper",
+    "description": "Basic alien attacker.",
     "type": "enemy",
     "category": "basic",
-    "health": 100,
-    "damage": 20,
-    "speed": 50,
-    "attackRange": 20,
+    "health": 90,
+    "damage": 12,
+    "speed": 42,
+    "attackRange": 18,
     "attackType": "melee",
     "drops": [
-      {
-        "itemId": "alien_flesh",
-        "quantity": 1,
-        "chance": 1.0
-      }
+      { "itemId": "alien_flesh", "quantity": 1, "chance": 1.0 }
     ]
   },
   "fast_enemy": {
     "id": "fast_enemy",
-    "name": "快速异形",
-    "description": "速度快的异形敌人",
+    "name": "Skitter",
+    "description": "Fast but fragile flanker.",
     "type": "enemy",
     "category": "fast",
-    "health": 50,
-    "damage": 15,
-    "speed": 100,
+    "health": 55,
+    "damage": 10,
+    "speed": 75,
     "attackRange": 15,
     "attackType": "melee",
     "drops": [
-      {
-        "itemId": "alien_flesh",
-        "quantity": 1,
-        "chance": 1.0
-      },
-      {
-        "itemId": "alien_blood",
-        "quantity": 1,
-        "chance": 0.5
-      }
+      { "itemId": "alien_flesh", "quantity": 1, "chance": 1.0 },
+      { "itemId": "alien_blood", "quantity": 1, "chance": 0.5 }
     ]
   },
   "strong_enemy": {
     "id": "strong_enemy",
-    "name": "强壮异形",
-    "description": "生命值高的异形敌人",
+    "name": "Brute",
+    "description": "Slow frontline bruiser.",
     "type": "enemy",
     "category": "strong",
-    "health": 200,
-    "damage": 30,
-    "speed": 30,
-    "attackRange": 25,
+    "health": 180,
+    "damage": 24,
+    "speed": 28,
+    "attackRange": 20,
     "attackType": "melee",
     "drops": [
-      {
-        "itemId": "alien_flesh",
-        "quantity": 2,
-        "chance": 1.0
-      },
-      {
-        "itemId": "alien_blood",
-        "quantity": 1,
-        "chance": 0.8
-      },
-      {
-        "itemId": "alien_bone",
-        "quantity": 1,
-        "chance": 0.5
-      }
+      { "itemId": "alien_flesh", "quantity": 2, "chance": 1.0 },
+      { "itemId": "alien_blood", "quantity": 1, "chance": 0.8 },
+      { "itemId": "alien_bone", "quantity": 1, "chance": 0.5 }
     ]
   },
   "ranged_enemy": {
     "id": "ranged_enemy",
-    "name": "远程异形",
-    "description": "远程攻击的异形敌人",
+    "name": "Spitter",
+    "description": "Acid ranged alien.",
     "type": "enemy",
     "category": "ranged",
-    "health": 80,
-    "damage": 25,
-    "speed": 40,
-    "attackRange": 80,
+    "health": 75,
+    "damage": 18,
+    "speed": 38,
+    "attackRange": 90,
     "attackType": "ranged",
     "drops": [
-      {
-        "itemId": "alien_flesh",
-        "quantity": 1,
-        "chance": 1.0
-      },
-      {
-        "itemId": "alien_eye",
-        "quantity": 1,
-        "chance": 0.5
-      }
+      { "itemId": "alien_flesh", "quantity": 1, "chance": 1.0 },
+      { "itemId": "alien_blood", "quantity": 1, "chance": 0.6 }
+    ]
+  },
+  "flying_enemy": {
+    "id": "flying_enemy",
+    "name": "Glider",
+    "description": "Fast aerial alien that slips through gaps.",
+    "type": "enemy",
+    "category": "flying",
+    "health": 65,
+    "damage": 18,
+    "speed": 68,
+    "attackRange": 24,
+    "attackType": "ranged",
+    "drops": [
+      { "itemId": "alien_flesh", "quantity": 1, "chance": 1.0 }
+    ]
+  },
+  "exploding_enemy": {
+    "id": "exploding_enemy",
+    "name": "Burstling",
+    "description": "Explodes on contact.",
+    "type": "enemy",
+    "category": "explosive",
+    "health": 45,
+    "damage": 35,
+    "speed": 62,
+    "attackRange": 15,
+    "attackType": "explosive",
+    "drops": [
+      { "itemId": "alien_flesh", "quantity": 1, "chance": 1.0 }
+    ]
+  },
+  "poison_enemy": {
+    "id": "poison_enemy",
+    "name": "Sporeshell",
+    "description": "Poisons and softens your defenses.",
+    "type": "enemy",
+    "category": "poison",
+    "health": 85,
+    "damage": 16,
+    "speed": 35,
+    "attackRange": 55,
+    "attackType": "ranged",
+    "drops": [
+      { "itemId": "alien_flesh", "quantity": 1, "chance": 1.0 },
+      { "itemId": "alien_blood", "quantity": 1, "chance": 0.6 }
+    ]
+  },
+  "stealth_enemy": {
+    "id": "stealth_enemy",
+    "name": "Shadeclaw",
+    "description": "Harder to notice, dangerous in late waves.",
+    "type": "enemy",
+    "category": "stealth",
+    "health": 60,
+    "damage": 22,
+    "speed": 58,
+    "attackRange": 18,
+    "attackType": "melee",
+    "drops": [
+      { "itemId": "alien_flesh", "quantity": 1, "chance": 1.0 },
+      { "itemId": "alien_blood", "quantity": 1, "chance": 0.5 }
     ]
   },
   "boss_enemy": {
     "id": "boss_enemy",
-    "name": "异形BOSS",
-    "description": "强大的异形BOSS",
+    "name": "Hive Tyrant",
+    "description": "Heavy commander-class alien leading the assault.",
     "type": "enemy",
     "category": "boss",
-    "health": 1000,
-    "damage": 50,
-    "speed": 20,
-    "attackRange": 30,
+    "health": 750,
+    "damage": 35,
+    "speed": 22,
+    "attackRange": 28,
     "attackType": "melee",
     "drops": [
-      {
-        "itemId": "alien_flesh",
-        "quantity": 10,
-        "chance": 1.0
-      },
-      {
-        "itemId": "alien_blood",
-        "quantity": 5,
-        "chance": 1.0
-      },
-      {
-        "itemId": "alien_bone",
-        "quantity": 3,
-        "chance": 1.0
-      },
-      {
-        "itemId": "alien_core",
-        "quantity": 1,
-        "chance": 1.0
-      }
+      { "itemId": "alien_flesh", "quantity": 8, "chance": 1.0 },
+      { "itemId": "alien_blood", "quantity": 4, "chance": 1.0 },
+      { "itemId": "alien_bone", "quantity": 2, "chance": 1.0 }
     ],
-    "specialAbilities": [
-      "ground_slam",
-      "acid_spit",
-      "summon_minions"
-    ]
+    "specialAbilities": ["ground_slam", "spawn_minions"]
   }
 }
