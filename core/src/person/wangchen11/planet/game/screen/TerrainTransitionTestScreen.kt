@@ -15,7 +15,10 @@ import person.wangchen11.planet.game.MainScreenConfig
 import person.wangchen11.planet.game.MapManager
 import java.io.File
 
-class TerrainTransitionTestScreen(game: BaseGame) : BaseScreen(game) {
+class TerrainTransitionTestScreen(
+    game: BaseGame,
+    private val maskOnlyMode: Boolean = false
+) : BaseScreen(game) {
     private val batch = SpriteBatch()
     private val camera = OrthographicCamera()
     private val testWidth = 44
@@ -38,7 +41,11 @@ class TerrainTransitionTestScreen(game: BaseGame) : BaseScreen(game) {
 
     override fun render(delta: Float) {
         elapsedTime += delta
-        Gdx.gl.glClearColor(0.09f, 0.11f, 0.12f, 1f)
+        if (maskOnlyMode) {
+            Gdx.gl.glClearColor(0.05f, 0.05f, 0.05f, 1f)
+        } else {
+            Gdx.gl.glClearColor(0.09f, 0.11f, 0.12f, 1f)
+        }
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         camera.update()
@@ -107,11 +114,15 @@ class TerrainTransitionTestScreen(game: BaseGame) : BaseScreen(game) {
             for (x in 0 until testWidth) {
                 val terrainId = terrainIds[y][x]
                 if (fillSprite != null) {
-                    fillSprite.setColor(MapManager.getTerrainColor(terrainId))
+                    fillSprite.setColor(if (maskOnlyMode) Color(0.18f, 0.18f, 0.18f, 1f) else MapManager.getTerrainColor(terrainId))
                     fillSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
                     fillSprite.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
                     fillSprite.draw(batch)
                     fillSprite.setColor(Color.WHITE)
+                }
+
+                if (maskOnlyMode) {
+                    continue
                 }
 
                 val sprite = GraphicsManager.getSprite("terrain_${terrainId}_${terrainVariants[y][x]}") ?: fallbackSprite
@@ -168,8 +179,12 @@ class TerrainTransitionTestScreen(game: BaseGame) : BaseScreen(game) {
                 if (mask == 0) continue
 
                 val maskSprite = GraphicsManager.getSprite("terrain_mask_$mask") ?: continue
-                val color = MapManager.getTerrainColor(targetTerrainId)
-                maskSprite.setColor(color.r, color.g, color.b, 0.96f)
+                if (maskOnlyMode) {
+                    maskSprite.setColor(1f, 0.15f, 0.15f, 1f)
+                } else {
+                    val color = MapManager.getTerrainColor(targetTerrainId)
+                    maskSprite.setColor(color.r, color.g, color.b, 0.96f)
+                }
                 maskSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
                 maskSprite.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
                 maskSprite.draw(batch)
@@ -204,7 +219,7 @@ class TerrainTransitionTestScreen(game: BaseGame) : BaseScreen(game) {
 
         val outputDir = File(File(System.getProperty("user.dir")).parentFile, "debug-screenshots")
         outputDir.mkdirs()
-        val outputFile = File(outputDir, "terrain-transition-test.png")
+        val outputFile = File(outputDir, if (maskOnlyMode) "terrain-transition-mask-test.png" else "terrain-transition-test.png")
         PixmapIO.writePNG(Gdx.files.absolute(outputFile.absolutePath), flipped)
         pixmap.dispose()
         flipped.dispose()

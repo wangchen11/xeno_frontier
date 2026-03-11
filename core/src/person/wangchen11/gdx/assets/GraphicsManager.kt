@@ -162,69 +162,29 @@ object GraphicsManager {
     }
 
     private fun roundedMaskAlpha(mask: Int, nx: Float, ny: Float): Float {
-        val influences = mutableListOf<Float>()
-        if (mask and 1 != 0) influences += edgeCurve(nx, 1f - ny)
-        if (mask and 2 != 0) influences += edgeCurve(ny, nx)
-        if (mask and 4 != 0) influences += edgeCurve(nx, ny)
-        if (mask and 8 != 0) influences += edgeCurve(ny, 1f - nx)
-        if (influences.isEmpty()) return 0f
+        val north = has(mask, 1)
+        val east = has(mask, 2)
+        val south = has(mask, 4)
+        val west = has(mask, 8)
+        val northwest = has(mask, 16)
+        val northeast = has(mask, 32)
+        val southeast = has(mask, 64)
+        val southwest = has(mask, 128)
 
-        var alpha = influences.maxOrNull() ?: 0f
+        val nw = if (north || west || northwest) 1f else 0f
+        val ne = if (north || east || northeast) 1f else 0f
+        val se = if (south || east || southeast) 1f else 0f
+        val sw = if (south || west || southwest) 1f else 0f
 
-        // Outer corners: only fully round when the diagonal also belongs to the overlay terrain.
-        if (has(mask, 1, 8) && has(mask, 16)) {
-            alpha = maxOf(alpha, cornerInfluence(nx, ny, 0.18f, 0.82f))
-        }
-        if (has(mask, 1, 2) && has(mask, 32)) {
-            alpha = maxOf(alpha, cornerInfluence(nx, ny, 0.82f, 0.82f))
-        }
-        if (has(mask, 4, 8) && has(mask, 128)) {
-            alpha = maxOf(alpha, cornerInfluence(nx, ny, 0.18f, 0.18f))
-        }
-        if (has(mask, 4, 2) && has(mask, 64)) {
-            alpha = maxOf(alpha, cornerInfluence(nx, ny, 0.82f, 0.18f))
-        }
-
-        // Inner corners: if the diagonal is missing, cut a curved bite out of the blend.
-        if (has(mask, 1, 8) && !has(mask, 16)) {
-            alpha -= innerCornerCut(nx, ny, 0.18f, 0.82f)
-        }
-        if (has(mask, 1, 2) && !has(mask, 32)) {
-            alpha -= innerCornerCut(nx, ny, 0.82f, 0.82f)
-        }
-        if (has(mask, 4, 8) && !has(mask, 128)) {
-            alpha -= innerCornerCut(nx, ny, 0.18f, 0.18f)
-        }
-        if (has(mask, 4, 2) && !has(mask, 64)) {
-            alpha -= innerCornerCut(nx, ny, 0.82f, 0.18f)
-        }
-
-        return alpha.coerceIn(0f, 1f)
+        val top = lerp(nw, ne, nx)
+        val bottom = lerp(sw, se, nx)
+        val field = lerp(top, bottom, ny)
+        return smoothStep(0.42f, 0.58f, field)
     }
 
     private fun has(mask: Int, bit: Int): Boolean = mask and bit != 0
 
-    private fun has(mask: Int, bitA: Int, bitB: Int): Boolean = has(mask, bitA) && has(mask, bitB)
-
-    private fun edgeCurve(along: Float, inward: Float): Float {
-        val arch = 0.14f * kotlin.math.cos((along - 0.5f) * kotlin.math.PI.toFloat() * 2f)
-        val center = 0.50f + arch
-        return smoothStep(center - 0.10f, center + 0.08f, inward)
-    }
-
-    private fun cornerInfluence(nx: Float, ny: Float, cx: Float, cy: Float): Float {
-        val dx = nx - cx
-        val dy = ny - cy
-        val distance = kotlin.math.sqrt(dx * dx + dy * dy)
-        return (1f - smoothStep(0.12f, 0.46f, distance)).coerceIn(0f, 1f)
-    }
-
-    private fun innerCornerCut(nx: Float, ny: Float, cx: Float, cy: Float): Float {
-        val dx = nx - cx
-        val dy = ny - cy
-        val distance = kotlin.math.sqrt(dx * dx + dy * dy)
-        return (1f - smoothStep(0.10f, 0.34f, distance)).coerceIn(0f, 1f) * 0.95f
-    }
+    private fun lerp(a: Float, b: Float, t: Float): Float = a + (b - a) * t
 
     private fun smoothStep(edge0: Float, edge1: Float, value: Float): Float {
         if (edge0 == edge1) return if (value >= edge1) 1f else 0f

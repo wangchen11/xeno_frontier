@@ -12,12 +12,14 @@ class PlanetGame(
         LocalizationManager.initialize()
         when (launchMode) {
             LaunchMode.NORMAL -> startScreen(MainMenuScreen(this))
-            LaunchMode.TERRAIN_TRANSITION_TEST -> startScreen(TerrainTransitionTestScreen(this))
+            LaunchMode.TERRAIN_TRANSITION_TEST -> startScreen(TerrainTransitionTestScreen(this, false))
+            LaunchMode.TERRAIN_TRANSITION_MASK_TEST -> startScreen(TerrainTransitionTestScreen(this, true))
         }
     }
 
     enum class LaunchMode {
         NORMAL,
-        TERRAIN_TRANSITION_TEST
+        TERRAIN_TRANSITION_TEST,
+        TERRAIN_TRANSITION_MASK_TEST
     }
 }
