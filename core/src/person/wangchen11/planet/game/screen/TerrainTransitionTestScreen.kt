@@ -144,53 +144,48 @@ class TerrainTransitionTestScreen(
             for (x in 0 until testWidth) {
                 val baseTerrainId = terrainIds[y][x]
                 val basePriority = MapManager.getTerrainPriority(baseTerrainId)
+                collectOverlayTerrainIds(x, y, basePriority).forEach { targetTerrainId ->
+                    var mask = 0
+                    if (shouldBlendTo(x, y + 1, basePriority, targetTerrainId)) mask = mask or 1
+                    if (shouldBlendTo(x + 1, y, basePriority, targetTerrainId)) mask = mask or 2
+                    if (shouldBlendTo(x, y - 1, basePriority, targetTerrainId)) mask = mask or 4
+                    if (shouldBlendTo(x - 1, y, basePriority, targetTerrainId)) mask = mask or 8
+                    if (shouldBlendTo(x - 1, y + 1, basePriority, targetTerrainId)) mask = mask or 16
+                    if (shouldBlendTo(x + 1, y + 1, basePriority, targetTerrainId)) mask = mask or 32
+                    if (shouldBlendTo(x + 1, y - 1, basePriority, targetTerrainId)) mask = mask or 64
+                    if (shouldBlendTo(x - 1, y - 1, basePriority, targetTerrainId)) mask = mask or 128
+                    if (mask == 0) return@forEach
 
-                var overlayTerrainId: String? = null
-                var overlayPriority = basePriority
-                val neighbors = listOf(
-                    terrainAt(x, y + 1),
-                    terrainAt(x + 1, y),
-                    terrainAt(x, y - 1),
-                    terrainAt(x - 1, y),
-                    terrainAt(x - 1, y + 1),
-                    terrainAt(x + 1, y + 1),
-                    terrainAt(x + 1, y - 1),
-                    terrainAt(x - 1, y - 1)
-                )
-                neighbors.forEach { neighborId ->
-                    if (neighborId == null) return@forEach
-                    val priority = MapManager.getTerrainPriority(neighborId)
-                    if (priority > overlayPriority) {
-                        overlayPriority = priority
-                        overlayTerrainId = neighborId
+                    val maskSprite = GraphicsManager.getSprite("terrain_mask_$mask") ?: return@forEach
+                    if (maskOnlyMode) {
+                        maskSprite.setColor(1f, 0.15f, 0.15f, 1f)
+                    } else {
+                        val color = MapManager.getTerrainColor(targetTerrainId)
+                        maskSprite.setColor(color.r, color.g, color.b, 0.96f)
                     }
+                    maskSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
+                    maskSprite.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
+                    maskSprite.draw(batch)
+                    maskSprite.setColor(Color.WHITE)
                 }
-
-                val targetTerrainId = overlayTerrainId ?: continue
-                var mask = 0
-                if (shouldBlendTo(x, y + 1, basePriority, targetTerrainId)) mask = mask or 1
-                if (shouldBlendTo(x + 1, y, basePriority, targetTerrainId)) mask = mask or 2
-                if (shouldBlendTo(x, y - 1, basePriority, targetTerrainId)) mask = mask or 4
-                if (shouldBlendTo(x - 1, y, basePriority, targetTerrainId)) mask = mask or 8
-                if (shouldBlendTo(x - 1, y + 1, basePriority, targetTerrainId)) mask = mask or 16
-                if (shouldBlendTo(x + 1, y + 1, basePriority, targetTerrainId)) mask = mask or 32
-                if (shouldBlendTo(x + 1, y - 1, basePriority, targetTerrainId)) mask = mask or 64
-                if (shouldBlendTo(x - 1, y - 1, basePriority, targetTerrainId)) mask = mask or 128
-                if (mask == 0) continue
-
-                val maskSprite = GraphicsManager.getSprite("terrain_mask_$mask") ?: continue
-                if (maskOnlyMode) {
-                    maskSprite.setColor(1f, 0.15f, 0.15f, 1f)
-                } else {
-                    val color = MapManager.getTerrainColor(targetTerrainId)
-                    maskSprite.setColor(color.r, color.g, color.b, 0.96f)
-                }
-                maskSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
-                maskSprite.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
-                maskSprite.draw(batch)
-                maskSprite.setColor(Color.WHITE)
             }
         }
+    }
+
+    private fun collectOverlayTerrainIds(tileX: Int, tileY: Int, basePriority: Int): List<String> {
+        return listOfNotNull(
+            terrainAt(tileX, tileY + 1),
+            terrainAt(tileX + 1, tileY),
+            terrainAt(tileX, tileY - 1),
+            terrainAt(tileX - 1, tileY),
+            terrainAt(tileX - 1, tileY + 1),
+            terrainAt(tileX + 1, tileY + 1),
+            terrainAt(tileX + 1, tileY - 1),
+            terrainAt(tileX - 1, tileY - 1)
+        )
+            .distinct()
+            .filter { MapManager.getTerrainPriority(it) > basePriority }
+            .sortedBy { MapManager.getTerrainPriority(it) }
     }
 
     private fun terrainAt(x: Int, y: Int): String? {
