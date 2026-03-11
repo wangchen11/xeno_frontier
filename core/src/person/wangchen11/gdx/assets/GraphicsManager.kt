@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import kotlin.random.Random
 
 /**
  * 图形管理器
@@ -18,6 +19,7 @@ object GraphicsManager {
      */
     fun initialize() {
         createBasicSprites()
+        createTerrainSprites()
     }
 
     /**
@@ -57,6 +59,177 @@ object GraphicsManager {
         createCropSprite("metal_crop", Color.GRAY)
         createCropSprite("defense_crop", Color.RED)
         createCropSprite("healing_crop", Color.BLUE)
+    }
+
+    private fun createTerrainSprites() {
+        createSolidSprite("terrain_fill", Color.WHITE)
+        createTerrainVariants("plain", Color(0.56f, 0.78f, 0.33f, 1f))
+        createTerrainVariants("forest", Color(0.13f, 0.49f, 0.15f, 1f))
+        createTerrainVariants("desert", Color(0.88f, 0.76f, 0.45f, 1f))
+        createTerrainVariants("mountain", Color(0.56f, 0.58f, 0.61f, 1f))
+        createTerrainVariants("swamp", Color(0.23f, 0.41f, 0.28f, 1f))
+        createTerrainVariants("lava", Color(0.73f, 0.18f, 0.02f, 1f))
+        createTerrainBlendMasks()
+    }
+
+    private fun createSolidSprite(id: String, color: Color) {
+        val pixmap = Pixmap(2, 2, Pixmap.Format.RGBA8888)
+        pixmap.setColor(color)
+        pixmap.fill()
+        val texture = Texture(pixmap)
+        pixmap.dispose()
+        sprites[id] = Sprite(texture)
+    }
+
+    private fun createTerrainVariants(id: String, baseColor: Color) {
+        repeat(3) { variant ->
+            val pixmap = Pixmap(32, 32, Pixmap.Format.RGBA8888)
+            val rng = Random(id.hashCode() * 31 + variant * 997)
+            pixmap.setColor(baseColor)
+            pixmap.fill()
+
+            drawTerrainNoise(pixmap, id, baseColor, rng)
+
+            val texture = Texture(pixmap)
+            pixmap.dispose()
+            sprites["terrain_${id}_$variant"] = Sprite(texture)
+        }
+    }
+
+    private fun drawTerrainNoise(pixmap: Pixmap, id: String, baseColor: Color, rng: Random) {
+        repeat(180) {
+            val x = rng.nextInt(32)
+            val y = rng.nextInt(32)
+            val shade = 0.82f + rng.nextFloat() * 0.26f
+            pixmap.setColor(
+                (baseColor.r * shade).coerceIn(0f, 1f),
+                (baseColor.g * shade).coerceIn(0f, 1f),
+                (baseColor.b * shade).coerceIn(0f, 1f),
+                1f
+            )
+            pixmap.drawPixel(x, y)
+        }
+
+        when (id) {
+            "plain" -> repeat(20) {
+                pixmap.setColor(0.72f, 0.90f, 0.46f, 0.45f)
+                val x = rng.nextInt(28)
+                val y = rng.nextInt(28)
+                pixmap.drawLine(x, y, x + rng.nextInt(4), y + rng.nextInt(3))
+            }
+            "forest" -> repeat(16) {
+                pixmap.setColor(0.07f, 0.28f, 0.09f, 0.55f)
+                pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 1 + rng.nextInt(2))
+            }
+            "desert" -> repeat(14) {
+                pixmap.setColor(0.97f, 0.88f, 0.60f, 0.45f)
+                val y = rng.nextInt(32)
+                pixmap.drawLine(0, y, 31, (y + rng.nextInt(3) - 1).coerceIn(0, 31))
+            }
+            "mountain" -> repeat(14) {
+                pixmap.setColor(0.35f, 0.37f, 0.40f, 0.65f)
+                pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 1 + rng.nextInt(3))
+            }
+            "swamp" -> repeat(12) {
+                pixmap.setColor(0.13f, 0.18f, 0.12f, 0.55f)
+                pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 2 + rng.nextInt(3))
+            }
+            "lava" -> repeat(18) {
+                pixmap.setColor(0.98f, 0.62f, 0.12f, 0.75f)
+                val x = rng.nextInt(30)
+                val y = rng.nextInt(30)
+                pixmap.drawLine(x, y, x + rng.nextInt(3), y + 1 + rng.nextInt(3))
+            }
+        }
+    }
+
+    private fun createTerrainBlendMasks() {
+        for (mask in 1..255) {
+            val pixmap = Pixmap(32, 32, Pixmap.Format.RGBA8888)
+            for (x in 0 until 32) {
+                for (y in 0 until 32) {
+                    val nx = x / 31f
+                    val ny = y / 31f
+                    val alpha = roundedMaskAlpha(mask, nx, ny)
+                    pixmap.setColor(1f, 1f, 1f, alpha)
+                    pixmap.drawPixel(x, y)
+                }
+            }
+            val texture = Texture(pixmap)
+            pixmap.dispose()
+            sprites["terrain_mask_$mask"] = Sprite(texture)
+        }
+    }
+
+    private fun roundedMaskAlpha(mask: Int, nx: Float, ny: Float): Float {
+        val influences = mutableListOf<Float>()
+        if (mask and 1 != 0) influences += edgeCurve(nx, 1f - ny)
+        if (mask and 2 != 0) influences += edgeCurve(ny, nx)
+        if (mask and 4 != 0) influences += edgeCurve(nx, ny)
+        if (mask and 8 != 0) influences += edgeCurve(ny, 1f - nx)
+        if (influences.isEmpty()) return 0f
+
+        var alpha = influences.maxOrNull() ?: 0f
+
+        // Outer corners: only fully round when the diagonal also belongs to the overlay terrain.
+        if (has(mask, 1, 8) && has(mask, 16)) {
+            alpha = maxOf(alpha, cornerInfluence(nx, ny, 0.18f, 0.82f))
+        }
+        if (has(mask, 1, 2) && has(mask, 32)) {
+            alpha = maxOf(alpha, cornerInfluence(nx, ny, 0.82f, 0.82f))
+        }
+        if (has(mask, 4, 8) && has(mask, 128)) {
+            alpha = maxOf(alpha, cornerInfluence(nx, ny, 0.18f, 0.18f))
+        }
+        if (has(mask, 4, 2) && has(mask, 64)) {
+            alpha = maxOf(alpha, cornerInfluence(nx, ny, 0.82f, 0.18f))
+        }
+
+        // Inner corners: if the diagonal is missing, cut a curved bite out of the blend.
+        if (has(mask, 1, 8) && !has(mask, 16)) {
+            alpha -= innerCornerCut(nx, ny, 0.18f, 0.82f)
+        }
+        if (has(mask, 1, 2) && !has(mask, 32)) {
+            alpha -= innerCornerCut(nx, ny, 0.82f, 0.82f)
+        }
+        if (has(mask, 4, 8) && !has(mask, 128)) {
+            alpha -= innerCornerCut(nx, ny, 0.18f, 0.18f)
+        }
+        if (has(mask, 4, 2) && !has(mask, 64)) {
+            alpha -= innerCornerCut(nx, ny, 0.82f, 0.18f)
+        }
+
+        return alpha.coerceIn(0f, 1f)
+    }
+
+    private fun has(mask: Int, bit: Int): Boolean = mask and bit != 0
+
+    private fun has(mask: Int, bitA: Int, bitB: Int): Boolean = has(mask, bitA) && has(mask, bitB)
+
+    private fun edgeCurve(along: Float, inward: Float): Float {
+        val arch = 0.14f * kotlin.math.cos((along - 0.5f) * kotlin.math.PI.toFloat() * 2f)
+        val center = 0.50f + arch
+        return smoothStep(center - 0.10f, center + 0.08f, inward)
+    }
+
+    private fun cornerInfluence(nx: Float, ny: Float, cx: Float, cy: Float): Float {
+        val dx = nx - cx
+        val dy = ny - cy
+        val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+        return (1f - smoothStep(0.12f, 0.46f, distance)).coerceIn(0f, 1f)
+    }
+
+    private fun innerCornerCut(nx: Float, ny: Float, cx: Float, cy: Float): Float {
+        val dx = nx - cx
+        val dy = ny - cy
+        val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+        return (1f - smoothStep(0.10f, 0.34f, distance)).coerceIn(0f, 1f) * 0.95f
+    }
+
+    private fun smoothStep(edge0: Float, edge1: Float, value: Float): Float {
+        if (edge0 == edge1) return if (value >= edge1) 1f else 0f
+        val t = ((value - edge0) / (edge1 - edge0)).coerceIn(0f, 1f)
+        return t * t * (3f - 2f * t)
     }
 
     /**

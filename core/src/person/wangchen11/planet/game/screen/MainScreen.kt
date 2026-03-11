@@ -65,6 +65,12 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
     private var gameOverDialogShown = false
     private var winDialogShown = false
     private var toastTimer = 0f
+    private var pointerDownOnWorld = false
+    private var activePointer = -1
+    private var lastDragScreenX = 0
+    private var lastDragScreenY = 0
+    private var dragDistance = 0f
+    private var isDraggingCamera = false
 
     override fun show() {
         super.show()
@@ -73,6 +79,7 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
 
         camera.setToOrtho(false, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
         camera.position.set(worldWidth() / 2f, worldHeight() / 2f, 0f)
+        camera.zoom = 0.7f
         camera.update()
 
         skin = createSkin()
@@ -81,6 +88,54 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
 
         inputMultiplexer = InputMultiplexer(
             object : InputAdapter() {
+                override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+                    if (button != Input.Buttons.LEFT || isPointerOverUi(screenX.toFloat(), screenY.toFloat())) {
+                        return false
+                    }
+                    pointerDownOnWorld = true
+                    activePointer = pointer
+                    lastDragScreenX = screenX
+                    lastDragScreenY = screenY
+                    dragDistance = 0f
+                    isDraggingCamera = false
+                    return true
+                }
+
+                override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+                    if (!pointerDownOnWorld || pointer != activePointer) {
+                        return false
+                    }
+                    val dx = screenX - lastDragScreenX
+                    val dy = screenY - lastDragScreenY
+                    dragDistance += kotlin.math.abs(dx) + kotlin.math.abs(dy)
+                    if (dragDistance > 6f) {
+                        isDraggingCamera = true
+                    }
+                    if (isDraggingCamera) {
+                        camera.position.x -= dx * camera.zoom
+                        camera.position.y += dy * camera.zoom
+                        clampCamera()
+                    }
+                    lastDragScreenX = screenX
+                    lastDragScreenY = screenY
+                    return true
+                }
+
+                override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+                    if (button != Input.Buttons.LEFT || pointer != activePointer) {
+                        return false
+                    }
+                    val shouldTriggerAction = pointerDownOnWorld && !isDraggingCamera && !isPointerOverUi(screenX.toFloat(), screenY.toFloat())
+                    pointerDownOnWorld = false
+                    activePointer = -1
+                    if (shouldTriggerAction) {
+                        performWorldAction(screenX, screenY)
+                    }
+                    isDraggingCamera = false
+                    dragDistance = 0f
+                    return shouldTriggerAction
+                }
+
                 override fun scrolled(amountX: Float, amountY: Float): Boolean {
                     pendingScrollAmount += amountY
                     return true
@@ -247,21 +302,103 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
     }
 
     private fun drawTerrain() {
-        val sprite = GraphicsManager.getSprite("grid") ?: return
+        val fallbackSprite = GraphicsManager.getSprite("grid")
+        val fillSprite = GraphicsManager.getSprite("terrain_fill")
         for (y in 0 until MapManager.MAP_HEIGHT) {
             for (x in 0 until MapManager.MAP_WIDTH) {
                 val terrain = MapManager.getTerrainAt(x, y) ?: continue
-                sprite.setColor(MapManager.getTerrainColor(terrain.id))
-                sprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
-                sprite.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
-                sprite.draw(batch)
-                if (MapManager.getGatherAmountAt(x, y) > 0 && BuildingManager.getBuildingAt(x, y) == null) {
-                    sprite.setColor(Color(1f, 1f, 1f, 0.08f))
+                if (fillSprite != null) {
+                    val color = MapManager.getTerrainColor(terrain.id)
+                    fillSprite.setColor(color)
+                    fillSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
+                    fillSprite.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
+                    fillSprite.draw(batch)
+                    fillSprite.setColor(Color.WHITE)
+                }
+
+                val variant = MapManager.getTerrainVariantAt(x, y)
+                val sprite = GraphicsManager.getSprite("terrain_${terrain.id}_$variant") ?: fallbackSprite
+                if (sprite != null) {
+                    if (sprite === fallbackSprite) {
+                        sprite.setColor(MapManager.getTerrainColor(terrain.id))
+                    } else {
+                        sprite.setColor(1f, 1f, 1f, 0.42f)
+                    }
+                    sprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
+                    sprite.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
                     sprite.draw(batch)
+                    sprite.setColor(Color.WHITE)
+                }
+
+                if (MapManager.getGatherAmountAt(x, y) > 0 && BuildingManager.getBuildingAt(x, y) == null) {
+                    val marker = fillSprite ?: sprite
+                    if (marker != null) {
+                        marker.setColor(1f, 1f, 1f, 0.06f)
+                        marker.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
+                        marker.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
+                        marker.draw(batch)
+                        marker.setColor(Color.WHITE)
+                    }
                 }
             }
         }
-        sprite.setColor(Color.WHITE)
+
+        drawTerrainTransitions()
+    }
+
+    private fun drawTerrainTransitions() {
+        for (y in 0 until MapManager.MAP_HEIGHT) {
+            for (x in 0 until MapManager.MAP_WIDTH) {
+                val terrain = MapManager.getTerrainAt(x, y) ?: continue
+                val basePriority = MapManager.getTerrainPriority(terrain.id)
+
+                var overlayTerrainId: String? = null
+                var overlayPriority = basePriority
+                val neighbors = listOf(
+                    MapManager.getTerrainAt(x, y + 1),
+                    MapManager.getTerrainAt(x + 1, y),
+                    MapManager.getTerrainAt(x, y - 1),
+                    MapManager.getTerrainAt(x - 1, y),
+                    MapManager.getTerrainAt(x - 1, y + 1),
+                    MapManager.getTerrainAt(x + 1, y + 1),
+                    MapManager.getTerrainAt(x + 1, y - 1),
+                    MapManager.getTerrainAt(x - 1, y - 1)
+                )
+                neighbors.forEach { neighbor ->
+                    if (neighbor == null) return@forEach
+                    val priority = MapManager.getTerrainPriority(neighbor.id)
+                    if (priority > overlayPriority) {
+                        overlayPriority = priority
+                        overlayTerrainId = neighbor.id
+                    }
+                }
+
+                val targetTerrainId = overlayTerrainId ?: continue
+                var mask = 0
+                if (shouldBlendTo(x, y + 1, basePriority, targetTerrainId)) mask = mask or 1
+                if (shouldBlendTo(x + 1, y, basePriority, targetTerrainId)) mask = mask or 2
+                if (shouldBlendTo(x, y - 1, basePriority, targetTerrainId)) mask = mask or 4
+                if (shouldBlendTo(x - 1, y, basePriority, targetTerrainId)) mask = mask or 8
+                if (shouldBlendTo(x - 1, y + 1, basePriority, targetTerrainId)) mask = mask or 16
+                if (shouldBlendTo(x + 1, y + 1, basePriority, targetTerrainId)) mask = mask or 32
+                if (shouldBlendTo(x + 1, y - 1, basePriority, targetTerrainId)) mask = mask or 64
+                if (shouldBlendTo(x - 1, y - 1, basePriority, targetTerrainId)) mask = mask or 128
+                if (mask == 0) continue
+
+                val maskSprite = GraphicsManager.getSprite("terrain_mask_$mask") ?: continue
+                val color = MapManager.getTerrainColor(targetTerrainId)
+                maskSprite.setColor(color.r, color.g, color.b, 0.96f)
+                maskSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
+                maskSprite.setPosition(x * MainScreenConfig.TILE_SIZE, y * MainScreenConfig.TILE_SIZE)
+                maskSprite.draw(batch)
+                maskSprite.setColor(Color.WHITE)
+            }
+        }
+    }
+
+    private fun shouldBlendTo(tileX: Int, tileY: Int, basePriority: Int, targetTerrainId: String): Boolean {
+        val neighbor = MapManager.getTerrainAt(tileX, tileY) ?: return false
+        return neighbor.id == targetTerrainId && MapManager.getTerrainPriority(neighbor.id) > basePriority
     }
 
     private fun drawSelectionOutline() {
@@ -392,7 +529,7 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
     }
 
     private fun handleKeyboard(delta: Float) {
-        val moveSpeed = 320f * delta * camera.zoom
+        val moveSpeed = 520f * delta * camera.zoom
         if (Gdx.input.isKeyPressed(Input.Keys.A)) camera.position.x -= moveSpeed
         if (Gdx.input.isKeyPressed(Input.Keys.D)) camera.position.x += moveSpeed
         if (Gdx.input.isKeyPressed(Input.Keys.W)) camera.position.y += moveSpeed
@@ -411,7 +548,7 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         }
 
         if (pendingScrollAmount != 0f) {
-            camera.zoom = (camera.zoom + pendingScrollAmount * 0.08f).coerceIn(0.65f, 2.2f)
+            camera.zoom = (camera.zoom + pendingScrollAmount * 0.08f).coerceIn(0.55f, 2.2f)
             pendingScrollAmount = 0f
         }
 
@@ -422,16 +559,19 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         val world = camera.unproject(Vector3(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f))
         selectedTileX = (world.x / MainScreenConfig.TILE_SIZE).toInt()
         selectedTileY = (world.y / MainScreenConfig.TILE_SIZE).toInt()
+    }
 
-        if (!Gdx.input.justTouched()) return
-        if (stage?.hit(Gdx.input.x.toFloat(), Gdx.graphics.height - Gdx.input.y.toFloat(), true) != null) return
-        if (selectedTileX !in 0 until MapManager.MAP_WIDTH || selectedTileY !in 0 until MapManager.MAP_HEIGHT) return
+    private fun performWorldAction(screenX: Int, screenY: Int) {
+        val world = camera.unproject(Vector3(screenX.toFloat(), screenY.toFloat(), 0f))
+        val tileX = (world.x / MainScreenConfig.TILE_SIZE).toInt()
+        val tileY = (world.y / MainScreenConfig.TILE_SIZE).toInt()
+        if (tileX !in 0 until MapManager.MAP_WIDTH || tileY !in 0 until MapManager.MAP_HEIGHT) return
 
         when (actionMode) {
             ActionMode.INSPECT -> Unit
             ActionMode.BUILD -> {
                 val model = MetadataManager.getBuilding(selectedBuildingId) ?: return
-                if (BuildingManager.createBuilding(selectedBuildingId, selectedTileX, selectedTileY) != null) {
+                if (BuildingManager.createBuilding(selectedBuildingId, tileX, tileY) != null) {
                     showToast(LocalizationManager.format("toast.placed", MetadataText.buildingName(model)))
                 } else {
                     showToast(LocalizationManager.format("toast.cannotPlace", MetadataText.buildingName(model)))
@@ -439,14 +579,14 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
             }
             ActionMode.PLANT -> {
                 val model = MetadataManager.getCrop(selectedCropId) ?: return
-                if (CropManager.plantCrop(selectedCropId, selectedTileX, selectedTileY) != null) {
+                if (CropManager.plantCrop(selectedCropId, tileX, tileY) != null) {
                     showToast(LocalizationManager.format("toast.planted", MetadataText.cropName(model)))
                 } else {
                     showToast(LocalizationManager.format("toast.cannotPlant", MetadataText.cropName(model)))
                 }
             }
             ActionMode.GATHER -> {
-                val result = MapManager.gatherAt(selectedTileX, selectedTileY)
+                val result = MapManager.gatherAt(tileX, tileY)
                 if (result.isEmpty()) {
                     showToast(LocalizationManager.tr("toast.nothingToGather"))
                 } else {
@@ -460,7 +600,7 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
                 }
             }
             ActionMode.HARVEST -> {
-                val crop = CropManager.getCropAt(selectedTileX, selectedTileY)
+                val crop = CropManager.getCropAt(tileX, tileY)
                 if (crop != null && CropManager.harvestCrop(crop)) {
                     showToast(LocalizationManager.tr("toast.harvestComplete"))
                 } else {
@@ -470,11 +610,23 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         }
     }
 
+    private fun isPointerOverUi(screenX: Float, screenY: Float): Boolean {
+        return stage?.hit(screenX, Gdx.graphics.height - screenY, true) != null
+    }
+
     private fun clampCamera() {
         val halfWidth = camera.viewportWidth * camera.zoom / 2f
         val halfHeight = camera.viewportHeight * camera.zoom / 2f
-        camera.position.x = camera.position.x.coerceIn(halfWidth, max(halfWidth, worldWidth() - halfWidth))
-        camera.position.y = camera.position.y.coerceIn(halfHeight, max(halfHeight, worldHeight() - halfHeight))
+        if (worldWidth() <= halfWidth * 2f) {
+            camera.position.x = worldWidth() / 2f
+        } else {
+            camera.position.x = camera.position.x.coerceIn(halfWidth, max(halfWidth, worldWidth() - halfWidth))
+        }
+        if (worldHeight() <= halfHeight * 2f) {
+            camera.position.y = worldHeight() / 2f
+        } else {
+            camera.position.y = camera.position.y.coerceIn(halfHeight, max(halfHeight, worldHeight() - halfHeight))
+        }
     }
 
     private fun showBuildDialog() {

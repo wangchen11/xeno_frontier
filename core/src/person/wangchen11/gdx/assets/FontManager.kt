@@ -10,12 +10,27 @@ object FontManager {
     private val BASE_FONT_SIZE: Int = 32.sp.toInt()
 
     private val fontGenerator: FreeTypeFontGenerator by lazy {
-        FreeTypeFontGenerator.setMaxTextureSize(4096)
-        FreeTypeFontGenerator(Gdx.files.internal("fonts/font.ttf"))
+        FreeTypeFontGenerator.setMaxTextureSize(2048)
+        val preferredFont = if (Gdx.files.internal("fonts/simhei.ttf").exists()) {
+            "fonts/simhei.ttf"
+        } else {
+            "fonts/font.ttf"
+        }
+        FreeTypeFontGenerator(Gdx.files.internal(preferredFont))
     }
 
     val texts: String by lazy {
-        FreeTypeFontGenerator.DEFAULT_CHARS + Gdx.files.internal("fonts/texts.txt").readString("UTF-8")
+        buildCharacterSet(
+            "i18n/messages.properties",
+            "i18n/messages_zh.properties",
+            "metadata/buildings.json",
+            "metadata/crops.json",
+            "metadata/techs.json",
+            "metadata/techBranches.json",
+            "metadata/terrains.json",
+            "metadata/resources.json",
+            "metadata/enemies.json"
+        )
     }
 
     val baseFont by lazy {
@@ -54,5 +69,20 @@ object FontManager {
             minFilter = Texture.TextureFilter.Linear
             magFilter = Texture.TextureFilter.Linear
         })
+    }
+
+    private fun buildCharacterSet(vararg assetPaths: String): String {
+        val chars = linkedSetOf<Char>()
+        FreeTypeFontGenerator.DEFAULT_CHARS.forEach(chars::add)
+        assetPaths.forEach { path ->
+            val file = Gdx.files.internal(path)
+            if (!file.exists()) return@forEach
+            file.readString("UTF-8").forEach { ch ->
+                if (!ch.isISOControl()) {
+                    chars.add(ch)
+                }
+            }
+        }
+        return chars.joinToString(separator = "")
     }
 }
