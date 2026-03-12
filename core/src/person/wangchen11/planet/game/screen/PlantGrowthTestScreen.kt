@@ -45,6 +45,7 @@ class PlantGrowthTestScreen(game: BaseGame) : BaseScreen(game) {
     private lateinit var skin: Skin
     private lateinit var inputMultiplexer: InputMultiplexer
     private lateinit var headerLabel: Label
+    private lateinit var fpsLabel: Label
     private lateinit var detailLabel: Label
     private lateinit var selectionLabel: Label
     private var selectedTileX = -1
@@ -57,6 +58,7 @@ class PlantGrowthTestScreen(game: BaseGame) : BaseScreen(game) {
         GraphicsManager.initialize()
         MetadataManager.initialize()
         MapManager.initialize()
+        WorldSceneRenderer.invalidateTerrainCache()
         ResourceManager.reset()
         BuildingManager.reset()
         CropManager.reset()
@@ -155,7 +157,12 @@ class PlantGrowthTestScreen(game: BaseGame) : BaseScreen(game) {
         top.defaults().pad(10f)
         headerLabel = Label(LocalizationManager.tr("ui.test.plantGrowthObjective"), skin, "title")
         headerLabel.setWrap(true)
-        top.add(headerLabel).expandX().fillX().left()
+        fpsLabel = Label("", skin, "muted")
+        val headerBlock = Table()
+        headerBlock.defaults().left().padBottom(4f)
+        headerBlock.add(headerLabel).expandX().fillX().left().row()
+        headerBlock.add(fpsLabel).left()
+        top.add(headerBlock).expandX().fillX().left()
         top.add(menuButton(LocalizationManager.tr("ui.button.back")) { finish() }).width(180f).height(42f)
         root.add(top).expandX().fillX().pad(10f).row()
 
@@ -219,11 +226,12 @@ class PlantGrowthTestScreen(game: BaseGame) : BaseScreen(game) {
         camera.update()
         batch.projectionMatrix = camera.combined
         batch.begin()
-        WorldSceneRenderer.drawWorld(batch)
+        WorldSceneRenderer.drawWorld(batch, currentViewBounds())
         WorldSceneRenderer.drawSelectionOutline(batch, selectedTileX, selectedTileY)
         batch.end()
 
         updateDetails()
+        fpsLabel.setText(LocalizationManager.format("ui.status.fps", Gdx.graphics.framesPerSecond))
         super.render(delta)
     }
 
@@ -283,6 +291,17 @@ class PlantGrowthTestScreen(game: BaseGame) : BaseScreen(game) {
             } else {
                 LocalizationManager.format("ui.test.selectedCropValue", MetadataText.cropName(crop))
             }
+        )
+    }
+
+    private fun currentViewBounds(): WorldSceneRenderer.ViewBounds {
+        val halfWidth = camera.viewportWidth * camera.zoom / 2f
+        val halfHeight = camera.viewportHeight * camera.zoom / 2f
+        return WorldSceneRenderer.ViewBounds.fromWorldRect(
+            camera.position.x - halfWidth,
+            camera.position.y - halfHeight,
+            camera.position.x + halfWidth,
+            camera.position.y + halfHeight
         )
     }
 

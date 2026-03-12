@@ -81,6 +81,7 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         super.show()
         GraphicsManager.initialize()
         GameManager.initialize()
+        WorldSceneRenderer.invalidateTerrainCache()
 
         camera.setToOrtho(false, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
         camera.position.set(worldWidth() / 2f, worldHeight() / 2f, 0f)
@@ -323,7 +324,7 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         batch.projectionMatrix = camera.combined
 
         batch.begin()
-        WorldSceneRenderer.drawWorld(batch)
+        WorldSceneRenderer.drawWorld(batch, currentViewBounds())
         WorldSceneRenderer.drawSelectionOutline(batch, selectedTileX, selectedTileY)
         batch.end()
 
@@ -1188,6 +1189,17 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
     private fun showToast(text: String) {
         toastLabel.setText(text)
         toastTimer = 4f
+    }
+
+    private fun currentViewBounds(): WorldSceneRenderer.ViewBounds {
+        val halfWidth = camera.viewportWidth * camera.zoom / 2f
+        val halfHeight = camera.viewportHeight * camera.zoom / 2f
+        return WorldSceneRenderer.ViewBounds.fromWorldRect(
+            camera.position.x - halfWidth,
+            camera.position.y - halfHeight,
+            camera.position.x + halfWidth,
+            camera.position.y + halfHeight
+        )
     }
 
 
