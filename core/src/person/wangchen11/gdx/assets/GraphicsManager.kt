@@ -85,10 +85,10 @@ object GraphicsManager {
         repeat(3) { variant ->
             val pixmap = Pixmap(32, 32, Pixmap.Format.RGBA8888)
             val rng = Random(id.hashCode() * 31 + variant * 997)
-            pixmap.setColor(baseColor)
+            pixmap.setColor(0f, 0f, 0f, 0f)
             pixmap.fill()
 
-            drawTerrainNoise(pixmap, id, baseColor, rng)
+            drawTerrainNoise(pixmap, id, rng)
 
             val texture = Texture(pixmap)
             pixmap.dispose()
@@ -96,46 +96,41 @@ object GraphicsManager {
         }
     }
 
-    private fun drawTerrainNoise(pixmap: Pixmap, id: String, baseColor: Color, rng: Random) {
+    private fun drawTerrainNoise(pixmap: Pixmap, id: String, rng: Random) {
         repeat(180) {
             val x = rng.nextInt(32)
             val y = rng.nextInt(32)
-            val shade = 0.82f + rng.nextFloat() * 0.26f
-            pixmap.setColor(
-                (baseColor.r * shade).coerceIn(0f, 1f),
-                (baseColor.g * shade).coerceIn(0f, 1f),
-                (baseColor.b * shade).coerceIn(0f, 1f),
-                1f
-            )
+            val shade = 0.18f + rng.nextFloat() * 0.18f
+            pixmap.setColor(0f, 0f, 0f, shade)
             pixmap.drawPixel(x, y)
         }
 
         when (id) {
             "plain" -> repeat(20) {
-                pixmap.setColor(0.72f, 0.90f, 0.46f, 0.45f)
+                pixmap.setColor(1f, 1f, 1f, 0.10f)
                 val x = rng.nextInt(28)
                 val y = rng.nextInt(28)
                 pixmap.drawLine(x, y, x + rng.nextInt(4), y + rng.nextInt(3))
             }
             "forest" -> repeat(16) {
-                pixmap.setColor(0.07f, 0.28f, 0.09f, 0.55f)
+                pixmap.setColor(0f, 0f, 0f, 0.24f)
                 pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 1 + rng.nextInt(2))
             }
             "desert" -> repeat(14) {
-                pixmap.setColor(0.97f, 0.88f, 0.60f, 0.45f)
+                pixmap.setColor(1f, 1f, 1f, 0.12f)
                 val y = rng.nextInt(32)
                 pixmap.drawLine(0, y, 31, (y + rng.nextInt(3) - 1).coerceIn(0, 31))
             }
             "mountain" -> repeat(14) {
-                pixmap.setColor(0.35f, 0.37f, 0.40f, 0.65f)
+                pixmap.setColor(0f, 0f, 0f, 0.28f)
                 pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 1 + rng.nextInt(3))
             }
             "swamp" -> repeat(12) {
-                pixmap.setColor(0.13f, 0.18f, 0.12f, 0.55f)
+                pixmap.setColor(0f, 0f, 0f, 0.22f)
                 pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 2 + rng.nextInt(3))
             }
             "lava" -> repeat(18) {
-                pixmap.setColor(0.98f, 0.62f, 0.12f, 0.75f)
+                pixmap.setColor(1f, 1f, 1f, 0.18f)
                 val x = rng.nextInt(30)
                 val y = rng.nextInt(30)
                 pixmap.drawLine(x, y, x + rng.nextInt(3), y + 1 + rng.nextInt(3))
