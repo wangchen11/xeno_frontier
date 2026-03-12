@@ -55,6 +55,7 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
     private lateinit var selectionLabel: Label
     private lateinit var hintLabel: Label
     private lateinit var toastLabel: Label
+    private lateinit var modeLabel: Label
 
     private var selectedBuildingId = "basic_farm"
     private var selectedCropId = "basic_crop"
@@ -152,14 +153,22 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         val font = FontManager.baseFont
         currentSkin.add("default-font", font)
         currentSkin.add("panel", ColorDrawable(Color(0.05f, 0.07f, 0.08f, 0.88f), 8f), Drawable::class.java)
+        currentSkin.add("panel-soft", ColorDrawable(Color(0.08f, 0.10f, 0.11f, 0.78f), 12f), Drawable::class.java)
+        currentSkin.add("panel-strong", ColorDrawable(Color(0.09f, 0.12f, 0.12f, 0.95f), 14f), Drawable::class.java)
         currentSkin.add("button-up", ColorDrawable(Color(0.13f, 0.18f, 0.20f, 1f), 8f), Drawable::class.java)
         currentSkin.add("button-down", ColorDrawable(Color(0.19f, 0.28f, 0.31f, 1f), 8f), Drawable::class.java)
         currentSkin.add("button-over", ColorDrawable(Color(0.16f, 0.24f, 0.27f, 1f), 8f), Drawable::class.java)
         currentSkin.add("button-disabled", ColorDrawable(Color(0.10f, 0.12f, 0.13f, 0.92f), 8f), Drawable::class.java)
+        currentSkin.add("button-primary-up", ColorDrawable(Color(0.18f, 0.33f, 0.28f, 1f), 8f), Drawable::class.java)
+        currentSkin.add("button-primary-down", ColorDrawable(Color(0.24f, 0.46f, 0.39f, 1f), 8f), Drawable::class.java)
+        currentSkin.add("button-primary-over", ColorDrawable(Color(0.21f, 0.39f, 0.34f, 1f), 8f), Drawable::class.java)
         currentSkin.add("scroll-bg", ColorDrawable(Color(0.04f, 0.05f, 0.06f, 0.55f), 6f), Drawable::class.java)
         currentSkin.add("scroll-knob", ColorDrawable(Color(0.38f, 0.61f, 0.52f, 0.95f), 6f), Drawable::class.java)
 
         currentSkin.add("default", Label.LabelStyle(font, Color.WHITE))
+        currentSkin.add("muted", Label.LabelStyle(font, Color(0.71f, 0.78f, 0.77f, 1f)))
+        currentSkin.add("accent", Label.LabelStyle(font, Color(0.72f, 0.95f, 0.79f, 1f)))
+        currentSkin.add("section", Label.LabelStyle(font, Color(0.91f, 0.95f, 0.93f, 1f)))
 
         val buttonStyle = TextButton.TextButtonStyle()
         buttonStyle.font = font
@@ -171,10 +180,16 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         buttonStyle.disabled = currentSkin.getDrawable("button-disabled")
         currentSkin.add("default", buttonStyle)
 
+        val primaryButtonStyle = TextButton.TextButtonStyle(buttonStyle)
+        primaryButtonStyle.up = currentSkin.getDrawable("button-primary-up")
+        primaryButtonStyle.down = currentSkin.getDrawable("button-primary-down")
+        primaryButtonStyle.over = currentSkin.getDrawable("button-primary-over")
+        currentSkin.add("primary", primaryButtonStyle)
+
         val windowStyle = Window.WindowStyle()
         windowStyle.titleFont = font
         windowStyle.titleFontColor = Color(0.72f, 0.95f, 0.79f, 1f)
-        windowStyle.background = currentSkin.getDrawable("panel")
+        windowStyle.background = currentSkin.getDrawable("panel-strong")
         currentSkin.add("default", windowStyle)
 
         val scrollPaneStyle = ScrollPaneStyle()
@@ -190,49 +205,71 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
 
     private fun rebuildHud() {
         stage?.clear()
-
         val root = Table()
         root.setFillParent(true)
         root.top()
         stage?.addActor(root)
 
         val top = Table()
-        top.background = skin.getDrawable("panel")
-        top.defaults().pad(8f)
+        top.background = skin.getDrawable("panel-strong")
+        top.defaults().pad(10f)
         resourceLabel = Label("", skin)
         statusLabel = Label("", skin)
-        top.add(resourceLabel).expandX().left()
-        top.add(statusLabel).right()
-        root.add(top).expandX().fillX().row()
+        resourceLabel.setWrap(true)
+        statusLabel.setAlignment(Align.right)
+
+        val brandBlock = Table()
+        brandBlock.defaults().left().padBottom(4f)
+        brandBlock.add(Label(LocalizationManager.tr("ui.header.outpostStatus"), skin, "accent")).left().row()
+        brandBlock.add(resourceLabel).width(640f).left()
+
+        val telemetryBlock = Table()
+        telemetryBlock.defaults().right().padBottom(4f)
+        telemetryBlock.add(Label(LocalizationManager.tr("ui.header.fieldTelemetry"), skin, "muted")).right().row()
+        telemetryBlock.add(statusLabel).right()
+
+        top.add(brandBlock).expandX().fillX().left()
+        top.add(telemetryBlock).right().minWidth(320f)
+        root.add(top).expandX().fillX().pad(10f, 10f, 0f, 10f).row()
 
         objectiveLabel = Label("", skin)
         objectiveLabel.setWrap(true)
         objectiveLabel.color = Color(0.72f, 0.95f, 0.79f, 1f)
-        root.add(objectiveLabel).expandX().fillX().pad(4f, 8f, 0f, 8f).row()
+        objectiveLabel.setAlignment(Align.left)
+        val objectiveCard = Table()
+        objectiveCard.background = skin.getDrawable("panel-soft")
+        objectiveCard.add(objectiveLabel).expandX().fillX().pad(8f, 12f, 8f, 12f)
+        root.add(objectiveCard).expandX().fillX().pad(6f, 10f, 0f, 10f).padBottom(0f).row()
 
-        val bottom = Table()
-        bottom.background = skin.getDrawable("panel")
-        bottom.defaults().pad(6f)
-        bottom.add(menuButton(LocalizationManager.tr("ui.button.build")) { showBuildDialog() })
-        bottom.add(menuButton(LocalizationManager.tr("ui.button.plant")) { showCropDialog() })
-        bottom.add(menuButton(LocalizationManager.tr("ui.button.gather")) { actionMode = ActionMode.GATHER })
-        bottom.add(menuButton(LocalizationManager.tr("ui.button.harvest")) { actionMode = ActionMode.HARVEST })
-        bottom.add(menuButton(LocalizationManager.tr("ui.button.inspect")) { actionMode = ActionMode.INSPECT })
-        bottom.add(menuButton(LocalizationManager.tr("ui.button.tech")) { showTechDialog() })
-        bottom.add(menuButton(LocalizationManager.tr("ui.button.wave")) { EnemyManager.spawnWave() })
-        bottom.add(menuButton(LocalizationManager.tr("ui.button.language")) {
+        val controlsCard = Table()
+        controlsCard.background = skin.getDrawable("panel-strong")
+        controlsCard.defaults().pad(6f)
+        controlsCard.add(Label(LocalizationManager.tr("ui.header.controlDeck"), skin, "section")).colspan(4).left().row()
+
+        modeLabel = Label("", skin, "muted")
+        modeLabel.setWrap(true)
+        controlsCard.add(modeLabel).colspan(4).width(520f).left().padBottom(10f).row()
+
+        controlsCard.add(menuButton("${LocalizationManager.tr("ui.button.build")} [B]", "primary") { showBuildDialog() }).width(138f).height(48f)
+        controlsCard.add(menuButton("${LocalizationManager.tr("ui.button.plant")} [P]") { showCropDialog() }).width(138f).height(48f)
+        controlsCard.add(menuButton("${LocalizationManager.tr("ui.button.gather")} [G]") { actionMode = ActionMode.GATHER }).width(138f).height(48f)
+        controlsCard.add(menuButton("${LocalizationManager.tr("ui.button.harvest")} [H]") { actionMode = ActionMode.HARVEST }).width(138f).height(48f).row()
+        controlsCard.add(menuButton("${LocalizationManager.tr("ui.button.inspect")} [I]") { actionMode = ActionMode.INSPECT }).width(138f).height(44f)
+        controlsCard.add(menuButton("${LocalizationManager.tr("ui.button.tech")} [T]") { showTechDialog() }).width(138f).height(44f)
+        controlsCard.add(menuButton("${LocalizationManager.tr("ui.button.wave")} [E]") { EnemyManager.spawnWave() }).width(138f).height(44f)
+        controlsCard.add(menuButton("${LocalizationManager.tr("ui.button.language")} [F2]") {
             LocalizationManager.toggleLanguage()
             rebuildHud()
-        })
+        }).width(138f).height(44f)
 
         val bottomWrap = Table()
         bottomWrap.setFillParent(true)
         bottomWrap.bottom()
-        bottomWrap.add(bottom).pad(12f)
+        bottomWrap.add(controlsCard).pad(12f)
         stage?.addActor(bottomWrap)
 
         val side = Table()
-        side.background = skin.getDrawable("panel")
+        side.background = skin.getDrawable("panel-strong")
         side.defaults().pad(8f).left()
         selectionLabel = Label("", skin)
         selectionLabel.setAlignment(Align.topLeft)
@@ -242,11 +279,11 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         toastLabel = Label("", skin)
         toastLabel.setWrap(true)
         toastLabel.color = Color.GOLD
-        side.add(Label(LocalizationManager.tr("ui.section.sectorIntel"), skin)).left().row()
+        side.add(Label(LocalizationManager.tr("ui.section.sectorIntel"), skin, "section")).left().row()
         side.add(selectionLabel).width(250f).row()
-        side.add(Label(LocalizationManager.tr("ui.section.currentAction"), skin)).left().padTop(8f).row()
+        side.add(Label(LocalizationManager.tr("ui.section.currentAction"), skin, "section")).left().padTop(8f).row()
         side.add(hintLabel).width(250f).row()
-        side.add(Label(LocalizationManager.tr("ui.section.log"), skin)).left().padTop(8f).row()
+        side.add(Label(LocalizationManager.tr("ui.section.log"), skin, "section")).left().padTop(8f).row()
         side.add(toastLabel).width(250f)
 
         val sideWrap = Table()
@@ -260,8 +297,8 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         }
     }
 
-    private fun menuButton(text: String, action: () -> Unit): TextButton {
-        val button = TextButton(text, skin)
+    private fun menuButton(text: String, style: String = "default", action: () -> Unit): TextButton {
+        val button = TextButton(text, skin, style)
         button.addListener(object : ClickListener() {
             override fun clicked(event: com.badlogic.gdx.scenes.scene2d.InputEvent?, x: Float, y: Float) {
                 action()
@@ -457,16 +494,25 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
 
         resourceLabel.setText(LocalizationManager.format("ui.status.resources", wood, stone, metal, energy, food))
         statusLabel.setText(
-            LocalizationManager.format(
+            "${LocalizationManager.format(
                 "ui.status.summary",
                 GameManager.day,
                 GameManager.colonyHp,
                 EnemyManager.getWaveCount(),
                 EnemyManager.getSecondsUntilNextWave().toInt(),
                 TechManager.getResearchPoints()
-            )
+            )}   ${LocalizationManager.format("ui.status.fps", Gdx.graphics.framesPerSecond)}"
         )
         objectiveLabel.setText(GameManager.getObjectiveSummary())
+        modeLabel.setText(
+            when (actionMode) {
+                ActionMode.INSPECT -> LocalizationManager.tr("ui.mode.inspect")
+                ActionMode.BUILD -> LocalizationManager.tr("ui.mode.build")
+                ActionMode.PLANT -> LocalizationManager.tr("ui.mode.plant")
+                ActionMode.GATHER -> LocalizationManager.tr("ui.mode.gather")
+                ActionMode.HARVEST -> LocalizationManager.tr("ui.mode.harvest")
+            }
+        )
 
         val terrain = MapManager.getTerrainAt(selectedTileX, selectedTileY)
         val building = BuildingManager.getBuildingAt(selectedTileX, selectedTileY)
@@ -794,8 +840,20 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         if (skin.has("default", LabelStyle::class.java)) {
             skin.remove("default", LabelStyle::class.java)
         }
+        if (skin.has("muted", LabelStyle::class.java)) {
+            skin.remove("muted", LabelStyle::class.java)
+        }
+        if (skin.has("accent", LabelStyle::class.java)) {
+            skin.remove("accent", LabelStyle::class.java)
+        }
+        if (skin.has("section", LabelStyle::class.java)) {
+            skin.remove("section", LabelStyle::class.java)
+        }
         if (skin.has("default", TextButtonStyle::class.java)) {
             skin.remove("default", TextButtonStyle::class.java)
+        }
+        if (skin.has("primary", TextButtonStyle::class.java)) {
+            skin.remove("primary", TextButtonStyle::class.java)
         }
         if (skin.has("default", WindowStyle::class.java)) {
             skin.remove("default", WindowStyle::class.java)

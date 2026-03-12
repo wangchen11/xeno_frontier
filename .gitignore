@@ -20,3 +20,5 @@ hs_err_pid*
 replay_pid*
 
 *.log
+
+debug-screenshots
