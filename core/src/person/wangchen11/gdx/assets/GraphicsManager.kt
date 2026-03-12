@@ -63,12 +63,12 @@ object GraphicsManager {
 
     private fun createTerrainSprites() {
         createSolidSprite("terrain_fill", Color.WHITE)
-        createTerrainVariants("plain", Color(0.56f, 0.78f, 0.33f, 1f))
-        createTerrainVariants("forest", Color(0.13f, 0.49f, 0.15f, 1f))
-        createTerrainVariants("desert", Color(0.88f, 0.76f, 0.45f, 1f))
-        createTerrainVariants("mountain", Color(0.56f, 0.58f, 0.61f, 1f))
-        createTerrainVariants("swamp", Color(0.23f, 0.41f, 0.28f, 1f))
-        createTerrainVariants("lava", Color(0.73f, 0.18f, 0.02f, 1f))
+        createTerrainVariants("plain")
+        createTerrainVariants("forest")
+        createTerrainVariants("desert")
+        createTerrainVariants("mountain")
+        createTerrainVariants("swamp")
+        createTerrainVariants("lava")
         createTerrainBlendMasks()
     }
 
@@ -81,7 +81,7 @@ object GraphicsManager {
         sprites[id] = Sprite(texture)
     }
 
-    private fun createTerrainVariants(id: String, baseColor: Color) {
+    private fun createTerrainVariants(id: String) {
         repeat(3) { variant ->
             val pixmap = Pixmap(32, 32, Pixmap.Format.RGBA8888)
             val rng = Random(id.hashCode() * 31 + variant * 997)
@@ -100,37 +100,37 @@ object GraphicsManager {
         repeat(180) {
             val x = rng.nextInt(32)
             val y = rng.nextInt(32)
-            val shade = 0.18f + rng.nextFloat() * 0.18f
+            val shade = 0.14f + rng.nextFloat() * 0.14f
             pixmap.setColor(0f, 0f, 0f, shade)
             pixmap.drawPixel(x, y)
         }
 
         when (id) {
             "plain" -> repeat(20) {
-                pixmap.setColor(1f, 1f, 1f, 0.10f)
+                pixmap.setColor(1f, 1f, 1f, 0.08f)
                 val x = rng.nextInt(28)
                 val y = rng.nextInt(28)
                 pixmap.drawLine(x, y, x + rng.nextInt(4), y + rng.nextInt(3))
             }
             "forest" -> repeat(16) {
-                pixmap.setColor(0f, 0f, 0f, 0.24f)
+                pixmap.setColor(0f, 0f, 0f, 0.20f)
                 pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 1 + rng.nextInt(2))
             }
             "desert" -> repeat(14) {
-                pixmap.setColor(1f, 1f, 1f, 0.12f)
+                pixmap.setColor(1f, 1f, 1f, 0.10f)
                 val y = rng.nextInt(32)
                 pixmap.drawLine(0, y, 31, (y + rng.nextInt(3) - 1).coerceIn(0, 31))
             }
             "mountain" -> repeat(14) {
-                pixmap.setColor(0f, 0f, 0f, 0.28f)
+                pixmap.setColor(0f, 0f, 0f, 0.24f)
                 pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 1 + rng.nextInt(3))
             }
             "swamp" -> repeat(12) {
-                pixmap.setColor(0f, 0f, 0f, 0.22f)
+                pixmap.setColor(0f, 0f, 0f, 0.18f)
                 pixmap.fillCircle(rng.nextInt(32), rng.nextInt(32), 2 + rng.nextInt(3))
             }
             "lava" -> repeat(18) {
-                pixmap.setColor(1f, 1f, 1f, 0.18f)
+                pixmap.setColor(1f, 1f, 1f, 0.14f)
                 val x = rng.nextInt(30)
                 val y = rng.nextInt(30)
                 pixmap.drawLine(x, y, x + rng.nextInt(3), y + 1 + rng.nextInt(3))
@@ -563,7 +563,7 @@ object GraphicsManager {
     /**
      * 创建作物精灵
      */
-    private fun createCropSprite(id: String, color: Color) {
+    private fun createCropSprite(id: String, @Suppress("UNUSED_PARAMETER") color: Color) {
         val pixmap = Pixmap(16, 16, Pixmap.Format.RGBA8888)
         
         // 绘制作物
