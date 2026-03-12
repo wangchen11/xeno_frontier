@@ -32,6 +32,7 @@ import person.wangchen11.gdx.game.BaseGame
 import person.wangchen11.gdx.game.screen.BaseScreen
 import person.wangchen11.planet.game.BuildingManager
 import person.wangchen11.planet.game.CropManager
+import person.wangchen11.planet.game.CropManager.PlantPhase
 import person.wangchen11.planet.game.EnemyManager
 import person.wangchen11.planet.game.GameManager
 import person.wangchen11.planet.game.MainScreenConfig
@@ -41,7 +42,10 @@ import person.wangchen11.planet.game.TechManager
 import person.wangchen11.planet.i18n.LocalizationManager
 import person.wangchen11.planet.metadata.MetadataManager
 import person.wangchen11.planet.metadata.MetadataText
+import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.sin
 
 class MainScreen(game: BaseGame) : BaseScreen(game) {
     private val batch = SpriteBatch()
@@ -261,7 +265,6 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
             LocalizationManager.toggleLanguage()
             rebuildHud()
         }).width(138f).height(44f)
-
         val bottomWrap = Table()
         bottomWrap.setFillParent(true)
         bottomWrap.bottom()
@@ -320,11 +323,8 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         batch.projectionMatrix = camera.combined
 
         batch.begin()
-        drawTerrain()
-        drawSelectionOutline()
-        drawBuildings()
-        drawCrops()
-        drawEnemies()
+        WorldSceneRenderer.drawWorld(batch)
+        WorldSceneRenderer.drawSelectionOutline(batch, selectedTileX, selectedTileY)
         batch.end()
 
         updateHud()
@@ -462,17 +462,399 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
 
     private fun drawCrops() {
         CropManager.getAllCrops().forEach { crop ->
-            val sprite = GraphicsManager.getSprite(crop.model.id) ?: return@forEach
-            val scale = 0.55f + crop.getGrowthPercentage() * 0.65f
-            val size = 16f * scale
-            sprite.setSize(size, size)
-            sprite.setPosition(
-                crop.x * MainScreenConfig.TILE_SIZE + (MainScreenConfig.TILE_SIZE - size) / 2f,
-                crop.y * MainScreenConfig.TILE_SIZE + (MainScreenConfig.TILE_SIZE - size) / 2f
+            drawProceduralCrop(crop)
+        }
+    }
+
+    private fun drawProceduralCrop(crop: CropManager.CropInstance) {
+        val fill = GraphicsManager.getSprite("terrain_fill") ?: return
+        val profile = crop.getVisualProfile()
+        val tileSize = MainScreenConfig.TILE_SIZE
+        val tileX = crop.x * tileSize
+        val tileY = crop.y * tileSize
+        val centerX = tileX + tileSize * 0.5f
+        val baseY = tileY + tileSize * 0.18f
+        val stemHeight = tileSize * (0.18f + profile.heightFactor * 0.60f)
+        val stemWidth = tileSize * (0.06f + profile.vitality * 0.04f)
+        val topX = centerX + tileSize * profile.stemLean
+        val topY = baseY + stemHeight
+        val phase = profile.phase
+
+        val stemColor = when (phase) {
+            PlantPhase.SEED -> Color(0.42f, 0.31f, 0.20f, 1f)
+            PlantPhase.DECAY -> Color(0.52f, 0.42f, 0.23f, 1f)
+            else -> Color(0.25f, 0.68f, 0.29f, 1f)
+        }
+        val leafColor = when (crop.model.category) {
+            "energy" -> Color(0.41f, 0.82f, 0.34f, 1f)
+            "material" -> Color(0.58f, 0.72f, 0.63f, 1f)
+            "defense" -> Color(0.33f, 0.68f, 0.30f, 1f)
+            "medical" -> Color(0.36f, 0.86f, 0.56f, 1f)
+            else -> Color(0.36f, 0.78f, 0.31f, 1f)
+        }
+        val bloomColor = when (crop.model.category) {
+            "energy" -> Color(0.98f, 0.78f, 0.16f, 1f)
+            "material" -> Color(0.93f, 0.86f, 0.40f, 1f)
+            "defense" -> Color(0.89f, 0.18f, 0.22f, 1f)
+            "medical" -> Color(0.32f, 0.58f, 1.0f, 1f)
+            else -> Color(0.96f, 0.86f, 0.35f, 1f)
+        }
+        val fruitColor = when (crop.model.category) {
+            "energy" -> Color(1.0f, 0.90f, 0.35f, 1f)
+            "material" -> Color(0.81f, 0.74f, 0.64f, 1f)
+            "defense" -> Color(0.97f, 0.35f, 0.30f, 1f)
+            "medical" -> Color(0.56f, 0.72f, 1.0f, 1f)
+            else -> Color(0.95f, 0.74f, 0.27f, 1f)
+        }
+
+        if (phase == PlantPhase.SEED) {
+            drawPlantCircle(fill, centerX, tileY + tileSize * 0.17f, tileSize * 0.10f, stemColor)
+            return
+        }
+
+        val midX = centerX + tileSize * profile.stemLean * 0.45f
+        val midY = baseY + stemHeight * 0.55f
+        drawPlantStem(fill, centerX, baseY, midX, midY, stemWidth, stemColor)
+        drawPlantStem(fill, midX, midY, topX, topY, stemWidth * 0.88f, stemColor)
+
+        when (crop.model.category) {
+            "energy" -> drawSunBloomCrop(fill, crop, profile, centerX, baseY, topX, topY, stemHeight, leafColor, bloomColor, fruitColor)
+            "material" -> drawFerronCrop(fill, crop, profile, centerX, baseY, topX, topY, stemHeight, leafColor, fruitColor)
+            "defense" -> drawSpineCrop(fill, crop, profile, baseY, topX, topY, stemHeight, stemColor, bloomColor)
+            "medical" -> drawMedCrop(fill, crop, profile, centerX, baseY, topX, topY, stemHeight, leafColor, bloomColor, fruitColor)
+            else -> drawGrainCrop(fill, crop, profile, centerX, baseY, topX, topY, stemHeight, stemColor, leafColor, bloomColor, fruitColor)
+        }
+    }
+
+    private fun drawGrainCrop(
+        fill: com.badlogic.gdx.graphics.g2d.Sprite,
+        crop: CropManager.CropInstance,
+        profile: CropManager.PlantVisualProfile,
+        centerX: Float,
+        baseY: Float,
+        topX: Float,
+        topY: Float,
+        stemHeight: Float,
+        stemColor: Color,
+        leafColor: Color,
+        bloomColor: Color,
+        fruitColor: Color
+    ) {
+        repeat(profile.leafCount) { index ->
+            val t = if (profile.leafCount <= 1) 0.5f else index / (profile.leafCount - 1f)
+            val side = if (index % 2 == 0) -1f else 1f
+            val leafY = baseY + stemHeight * (0.22f + t * 0.58f)
+            val anchorX = centerX + (topX - centerX) * (0.18f + t * 0.58f)
+            val leafSize = MainScreenConfig.TILE_SIZE * (0.11f + (1f - abs(t - 0.45f)) * 0.12f)
+            val tipX = anchorX + side * leafSize * (1.1f + t * 0.25f)
+            val tipY = leafY + leafSize * (0.15f - t * 0.08f)
+            drawLeaf(fill, anchorX, leafY, tipX, tipY, leafSize, if (profile.phase == PlantPhase.DECAY) stemColor else leafColor)
+        }
+
+        if (profile.phase.ordinal >= PlantPhase.FLOWERING.ordinal) {
+            drawFlower(fill, topX, topY, MainScreenConfig.TILE_SIZE * 0.13f, bloomColor, stemColor, profile.flowerCount.coerceAtLeast(1))
+        }
+        if (profile.phase.ordinal >= PlantPhase.FRUITING.ordinal) {
+            repeat(profile.fruitCount.coerceAtLeast(2)) { index ->
+                val side = if (index % 2 == 0) -1f else 1f
+                val y = topY - MainScreenConfig.TILE_SIZE * (0.03f + index * 0.03f)
+                drawPlantCircle(fill, topX + side * MainScreenConfig.TILE_SIZE * 0.08f, y, MainScreenConfig.TILE_SIZE * 0.045f, fruitColor)
+            }
+        }
+        drawDispersalSeeds(fill, crop, topX, topY)
+    }
+
+    private fun drawSunBloomCrop(
+        fill: com.badlogic.gdx.graphics.g2d.Sprite,
+        crop: CropManager.CropInstance,
+        profile: CropManager.PlantVisualProfile,
+        centerX: Float,
+        baseY: Float,
+        topX: Float,
+        topY: Float,
+        stemHeight: Float,
+        leafColor: Color,
+        bloomColor: Color,
+        fruitColor: Color
+    ) {
+        repeat(profile.leafCount.coerceAtMost(4)) { index ->
+            val side = if (index % 2 == 0) -1f else 1f
+            val level = index / 2f
+            val anchorY = baseY + stemHeight * (0.28f + level * 0.22f)
+            val anchorX = centerX + (topX - centerX) * (0.28f + level * 0.12f)
+            val size = MainScreenConfig.TILE_SIZE * (0.15f + level * 0.03f)
+            drawLeaf(fill, anchorX, anchorY, anchorX + side * size * 1.35f, anchorY + size * 0.18f, size, leafColor)
+        }
+        if (profile.phase.ordinal >= PlantPhase.FLOWERING.ordinal) {
+            drawFlower(fill, topX, topY, MainScreenConfig.TILE_SIZE * 0.20f, bloomColor, fruitColor, 5 + profile.flowerCount)
+        }
+        if (profile.phase.ordinal >= PlantPhase.FRUITING.ordinal) {
+            drawPlantCircle(fill, topX, topY, MainScreenConfig.TILE_SIZE * 0.09f, Color(0.44f, 0.27f, 0.12f, 1f))
+        }
+        drawDispersalSeeds(fill, crop, topX, topY)
+    }
+
+    private fun drawFerronCrop(
+        fill: com.badlogic.gdx.graphics.g2d.Sprite,
+        crop: CropManager.CropInstance,
+        profile: CropManager.PlantVisualProfile,
+        centerX: Float,
+        baseY: Float,
+        topX: Float,
+        topY: Float,
+        stemHeight: Float,
+        leafColor: Color,
+        fruitColor: Color
+    ) {
+        repeat(profile.leafCount.coerceAtMost(5)) { index ->
+            val t = if (profile.leafCount <= 1) 0.5f else index / profile.leafCount.toFloat()
+            val side = if (index % 2 == 0) -1f else 1f
+            val anchorY = baseY + stemHeight * (0.24f + t * 0.54f)
+            val anchorX = centerX + (topX - centerX) * (0.20f + t * 0.38f)
+            val size = MainScreenConfig.TILE_SIZE * (0.10f + t * 0.06f)
+            drawCrystalLeaf(fill, anchorX, anchorY, anchorX + side * size * 1.05f, anchorY + size * 0.05f, size, leafColor)
+        }
+        repeat(profile.fruitCount.coerceAtLeast(2)) { index ->
+            val side = if (index % 2 == 0) -1f else 1f
+            val crystalX = topX + side * MainScreenConfig.TILE_SIZE * (0.05f + index * 0.05f)
+            val crystalY = topY - MainScreenConfig.TILE_SIZE * (0.02f + index * 0.04f)
+            drawCrystalLeaf(fill, crystalX, crystalY - MainScreenConfig.TILE_SIZE * 0.04f, crystalX, crystalY + MainScreenConfig.TILE_SIZE * 0.04f, MainScreenConfig.TILE_SIZE * 0.11f, fruitColor)
+        }
+        drawDispersalSeeds(fill, crop, topX, topY)
+    }
+
+    private fun drawSpineCrop(
+        fill: com.badlogic.gdx.graphics.g2d.Sprite,
+        crop: CropManager.CropInstance,
+        profile: CropManager.PlantVisualProfile,
+        baseY: Float,
+        topX: Float,
+        topY: Float,
+        stemHeight: Float,
+        stemColor: Color,
+        bloomColor: Color
+    ) {
+        val bulbY = baseY + stemHeight * 0.68f
+        val bulbRadius = MainScreenConfig.TILE_SIZE * (0.11f + profile.heightFactor * 0.08f)
+        drawPlantCircle(fill, topX, bulbY, bulbRadius, bloomColor)
+        repeat(8) { index ->
+            val angle = (Math.PI * 2.0 * index / 8.0).toFloat()
+            val spikeBaseX = topX + cos(angle) * bulbRadius * 0.55f
+            val spikeBaseY = bulbY + sin(angle) * bulbRadius * 0.55f
+            val spikeTipX = topX + cos(angle) * bulbRadius * 1.45f
+            val spikeTipY = bulbY + sin(angle) * bulbRadius * 1.45f
+            drawPlantStem(fill, spikeBaseX, spikeBaseY, spikeTipX, spikeTipY, MainScreenConfig.TILE_SIZE * 0.018f, stemColor)
+        }
+        if (profile.phase.ordinal >= PlantPhase.FLOWERING.ordinal) {
+            drawPlantCircle(fill, topX, topY, MainScreenConfig.TILE_SIZE * 0.06f, Color(0.98f, 0.82f, 0.52f, 1f))
+        }
+        drawDispersalSeeds(fill, crop, topX, topY)
+    }
+
+    private fun drawMedCrop(
+        fill: com.badlogic.gdx.graphics.g2d.Sprite,
+        crop: CropManager.CropInstance,
+        profile: CropManager.PlantVisualProfile,
+        centerX: Float,
+        baseY: Float,
+        topX: Float,
+        topY: Float,
+        stemHeight: Float,
+        leafColor: Color,
+        bloomColor: Color,
+        fruitColor: Color
+    ) {
+        repeat(profile.leafCount.coerceAtMost(6)) { index ->
+            val t = if (profile.leafCount <= 1) 0.5f else index / (profile.leafCount - 1f)
+            val side = if (index % 2 == 0) -1f else 1f
+            val anchorY = baseY + stemHeight * (0.18f + t * 0.60f)
+            val anchorX = centerX + (topX - centerX) * (0.16f + t * 0.44f)
+            val size = MainScreenConfig.TILE_SIZE * (0.13f + (1f - abs(t - 0.5f)) * 0.05f)
+            drawRoundedLeaf(fill, anchorX, anchorY, anchorX + side * size * 0.95f, anchorY + size * 0.12f, size, leafColor)
+        }
+        if (profile.phase.ordinal >= PlantPhase.FLOWERING.ordinal) {
+            drawFlower(fill, topX, topY, MainScreenConfig.TILE_SIZE * 0.14f, bloomColor, fruitColor, 4 + profile.flowerCount)
+        }
+        if (profile.phase.ordinal >= PlantPhase.FRUITING.ordinal) {
+            drawPlantCircle(fill, topX, topY - MainScreenConfig.TILE_SIZE * 0.02f, MainScreenConfig.TILE_SIZE * 0.05f, fruitColor)
+        }
+        drawDispersalSeeds(fill, crop, topX, topY)
+    }
+
+    private fun drawDispersalSeeds(
+        fill: com.badlogic.gdx.graphics.g2d.Sprite,
+        crop: CropManager.CropInstance,
+        topX: Float,
+        topY: Float
+    ) {
+        if (crop.getLifePhase() != PlantPhase.DISPERSAL) return
+        repeat(3) { index ->
+            val drift = ((crop.lifecycleTime * 1.5f + index) % 1f) * MainScreenConfig.TILE_SIZE * 0.26f
+            drawPlantCircle(
+                fill,
+                topX + drift,
+                topY + MainScreenConfig.TILE_SIZE * 0.05f + index * MainScreenConfig.TILE_SIZE * 0.04f,
+                MainScreenConfig.TILE_SIZE * 0.035f,
+                Color(0.96f, 0.92f, 0.72f, 0.85f)
             )
-            sprite.color.a = 0.6f + crop.getGrowthPercentage() * 0.4f
-            sprite.draw(batch)
-            sprite.color.a = 1f
+        }
+    }
+
+    private fun plantPhaseText(phase: PlantPhase): String {
+        return when (phase) {
+            PlantPhase.SEED -> LocalizationManager.tr("ui.plantPhase.seed")
+            PlantPhase.SPROUT -> LocalizationManager.tr("ui.plantPhase.sprout")
+            PlantPhase.JUVENILE -> LocalizationManager.tr("ui.plantPhase.juvenile")
+            PlantPhase.MATURE -> LocalizationManager.tr("ui.plantPhase.mature")
+            PlantPhase.FLOWERING -> LocalizationManager.tr("ui.plantPhase.flowering")
+            PlantPhase.FRUITING -> LocalizationManager.tr("ui.plantPhase.fruiting")
+            PlantPhase.DISPERSAL -> LocalizationManager.tr("ui.plantPhase.dispersal")
+            PlantPhase.DECAY -> LocalizationManager.tr("ui.plantPhase.decay")
+        }
+    }
+
+    private fun plantStateText(crop: CropManager.CropInstance): String {
+        return when (crop.getLifePhase()) {
+            PlantPhase.DISPERSAL -> LocalizationManager.format("ui.plantState.spread", crop.reproductionCooldown.coerceAtLeast(0f).toInt())
+            PlantPhase.DECAY -> LocalizationManager.format("ui.plantState.decay", (14f - crop.decayTimer).coerceAtLeast(0f).toInt())
+            else -> LocalizationManager.format(
+                "ui.plantState.growth",
+                ((1f - crop.getGrowthPercentage()).coerceAtLeast(0f) * crop.model.growthTime).toInt()
+            )
+        }
+    }
+
+    private fun drawPlantRect(
+        sprite: com.badlogic.gdx.graphics.g2d.Sprite,
+        x: Float,
+        y: Float,
+        width: Float,
+        height: Float,
+        color: Color
+    ) {
+        sprite.setColor(color)
+        sprite.setSize(width, height)
+        sprite.setPosition(x, y)
+        sprite.draw(batch)
+        sprite.setColor(Color.WHITE)
+    }
+
+    private fun drawPlantStem(
+        sprite: com.badlogic.gdx.graphics.g2d.Sprite,
+        startX: Float,
+        startY: Float,
+        endX: Float,
+        endY: Float,
+        thickness: Float,
+        color: Color
+    ) {
+        val segments = 8
+        for (i in 0..segments) {
+            val t = i / segments.toFloat()
+            val x = startX + (endX - startX) * t
+            val y = startY + (endY - startY) * t
+            drawPlantCircle(sprite, x, y, thickness * (0.62f - t * 0.12f), color)
+        }
+    }
+
+    private fun drawLeaf(
+        sprite: com.badlogic.gdx.graphics.g2d.Sprite,
+        baseX: Float,
+        baseY: Float,
+        tipX: Float,
+        tipY: Float,
+        size: Float,
+        color: Color
+    ) {
+        val segments = 6
+        for (i in 0..segments) {
+            val t = i / segments.toFloat()
+            val x = baseX + (tipX - baseX) * t
+            val y = baseY + (tipY - baseY) * t
+            val width = size * sin(t * Math.PI).toFloat() * 0.42f
+            drawPlantCircle(sprite, x, y, width.coerceAtLeast(size * 0.06f), color)
+        }
+    }
+
+    private fun drawRoundedLeaf(
+        sprite: com.badlogic.gdx.graphics.g2d.Sprite,
+        baseX: Float,
+        baseY: Float,
+        tipX: Float,
+        tipY: Float,
+        size: Float,
+        color: Color
+    ) {
+        val segments = 7
+        for (i in 0..segments) {
+            val t = i / segments.toFloat()
+            val x = baseX + (tipX - baseX) * t
+            val y = baseY + (tipY - baseY) * t
+            val width = size * sin(t * Math.PI).toFloat() * 0.52f
+            drawPlantCircle(sprite, x, y, width.coerceAtLeast(size * 0.08f), color)
+        }
+    }
+
+    private fun drawCrystalLeaf(
+        sprite: com.badlogic.gdx.graphics.g2d.Sprite,
+        baseX: Float,
+        baseY: Float,
+        tipX: Float,
+        tipY: Float,
+        size: Float,
+        color: Color
+    ) {
+        val segments = 5
+        for (i in 0..segments) {
+            val t = i / segments.toFloat()
+            val x = baseX + (tipX - baseX) * t
+            val y = baseY + (tipY - baseY) * t
+            val width = size * (1f - abs(t - 0.5f) * 2f) * 0.34f
+            drawPlantRect(sprite, x - width, y - size * 0.05f, width * 2f, size * 0.10f, color)
+        }
+    }
+
+    private fun drawFlower(
+        sprite: com.badlogic.gdx.graphics.g2d.Sprite,
+        centerX: Float,
+        centerY: Float,
+        radius: Float,
+        petalColor: Color,
+        coreColor: Color,
+        petalCount: Int
+    ) {
+        val petals = (4 + petalCount).coerceIn(5, 8)
+        repeat(petals) { index ->
+            val angle = (Math.PI * 2.0 * index / petals).toFloat()
+            val px = centerX + cos(angle) * radius * 0.82f
+            val py = centerY + sin(angle) * radius * 0.82f
+            drawPlantCircle(sprite, px, py, radius * 0.46f, petalColor)
+        }
+        drawPlantCircle(sprite, centerX, centerY, radius * 0.42f, Color(0.47f, 0.30f, 0.16f, 1f))
+        drawPlantCircle(sprite, centerX, centerY, radius * 0.22f, coreColor)
+    }
+
+    private fun drawPlantCircle(
+        sprite: com.badlogic.gdx.graphics.g2d.Sprite,
+        centerX: Float,
+        centerY: Float,
+        radius: Float,
+        color: Color
+    ) {
+        if (radius <= 0f) return
+        val step = (radius * 0.55f).coerceAtLeast(1.5f)
+        var offsetY = -radius
+        while (offsetY <= radius) {
+            val width = kotlin.math.sqrt((radius * radius - offsetY * offsetY).coerceAtLeast(0f))
+            drawPlantRect(
+                sprite,
+                centerX - width,
+                centerY + offsetY - step * 0.5f,
+                width * 2f,
+                step,
+                color
+            )
+            offsetY += step
         }
     }
 
@@ -544,6 +926,8 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
                             (crop.getGrowthPercentage() * 100).toInt()
                         )
                     )
+                    appendLine(LocalizationManager.format("ui.tile.cropPhase", plantPhaseText(crop.getLifePhase())))
+                    appendLine(LocalizationManager.format("ui.tile.cropState", plantStateText(crop)))
                 }
                 appendLine(LocalizationManager.format("ui.tile.gatherable", gatherAmount))
                 if (terrain != null && building == null && crop == null && gatherAmount == 0) {
@@ -805,6 +1189,7 @@ class MainScreen(game: BaseGame) : BaseScreen(game) {
         toastLabel.setText(text)
         toastTimer = 4f
     }
+
 
     private fun updateToast(delta: Float) {
         if (toastTimer > 0f) {

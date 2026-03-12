@@ -77,6 +77,13 @@ class MainMenuScreen(game: BaseGame) : BaseScreen(game) {
             }
         })
 
+        val testsButton = TextButton(LocalizationManager.tr("ui.button.tests"), skin)
+        testsButton.addListener(object : ClickListener() {
+            override fun clicked(event: com.badlogic.gdx.scenes.scene2d.InputEvent?, x: Float, y: Float) {
+                game.startScreen(TestFeatureListScreen(game))
+            }
+        })
+
         val shell = Table()
         shell.defaults().pad(18f)
 
@@ -110,6 +117,7 @@ class MainMenuScreen(game: BaseGame) : BaseScreen(game) {
         actionCard.add(actionTitle).left().width(260f).row()
         actionCard.add(actionHint).width(260f).left().padBottom(18f).row()
         actionCard.add(startButton).width(260f).height(60f).row()
+        actionCard.add(testsButton).width(260f).height(52f).row()
         actionCard.add(languageButton).width(260f).height(52f).row()
         actionCard.add(exitButton).width(260f).height(52f).row()
 
