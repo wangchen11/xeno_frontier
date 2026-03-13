@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import kotlin.random.Random
+import kotlin.math.floor
+import kotlin.math.sin
 
 /**
  * 图形管理器
@@ -166,15 +168,25 @@ object GraphicsManager {
         val southeast = has(mask, 64)
         val southwest = has(mask, 128)
 
+        val waveHorizontal = edgeWave(nx, mask * 0.11f)
+        val waveVertical = edgeWave(ny, mask * 0.17f + 3.1f)
+        val warpX = (fbm(nx * 5.8f, ny * 5.8f, mask * 0.37f) - 0.5f) * 0.06f +
+            waveVertical * directionalInfluence(north, south, east, west, horizontalEdge = false)
+        val warpY = (fbm(nx * 5.8f + 17.3f, ny * 5.8f - 9.1f, mask * 0.53f) - 0.5f) * 0.06f +
+            waveHorizontal * directionalInfluence(north, south, east, west, horizontalEdge = true)
+        val sampleX = (nx + warpX).coerceIn(0f, 1f)
+        val sampleY = (ny + warpY).coerceIn(0f, 1f)
+
         val nw = if (north || west || northwest) 1f else 0f
         val ne = if (north || east || northeast) 1f else 0f
         val se = if (south || east || southeast) 1f else 0f
         val sw = if (south || west || southwest) 1f else 0f
 
-        val top = lerp(nw, ne, nx)
-        val bottom = lerp(sw, se, nx)
-        val field = lerp(top, bottom, ny)
-        return smoothStep(0.42f, 0.58f, field)
+        val top = lerp(nw, ne, sampleX)
+        val bottom = lerp(sw, se, sampleX)
+        val field = lerp(top, bottom, sampleY)
+        val thresholdShift = (fbm(sampleX * 9.2f - 3.7f, sampleY * 9.2f + 4.1f, mask * 0.19f) - 0.5f) * 0.06f
+        return smoothStep(0.42f + thresholdShift, 0.58f + thresholdShift, field)
     }
 
     private fun has(mask: Int, bit: Int): Boolean = mask and bit != 0
@@ -185,6 +197,47 @@ object GraphicsManager {
         if (edge0 == edge1) return if (value >= edge1) 1f else 0f
         val t = ((value - edge0) / (edge1 - edge0)).coerceIn(0f, 1f)
         return t * t * (3f - 2f * t)
+    }
+
+    private fun fbm(x: Float, y: Float, seed: Float): Float {
+        val octave1 = valueNoise(x, y, seed)
+        val octave2 = valueNoise(x * 2.1f, y * 2.1f, seed + 11.7f)
+        val octave3 = valueNoise(x * 4.3f, y * 4.3f, seed - 6.4f)
+        return octave1 * 0.55f + octave2 * 0.30f + octave3 * 0.15f
+    }
+
+    private fun valueNoise(x: Float, y: Float, seed: Float): Float {
+        val value = sin(x * 12.9898f + y * 78.233f + seed * 37.719f) * 43758.5453f
+        return (value - floor(value.toDouble())).toFloat()
+    }
+
+    private fun edgeWave(t: Float, seed: Float): Float {
+        val angle = (t * 2f * Math.PI).toFloat()
+        val primary = sin(angle * 0.85f + seed * 2.9f)
+        val secondary = sin(angle * 1.75f + seed * 1.8f + 0.9f)
+        return (primary * 0.72f + secondary * 0.28f) * 0.055f
+    }
+
+    private fun directionalInfluence(
+        north: Boolean,
+        south: Boolean,
+        east: Boolean,
+        west: Boolean,
+        horizontalEdge: Boolean
+    ): Float {
+        return if (horizontalEdge) {
+            when {
+                north.xor(south) -> 1f
+                east.xor(west) -> 0.35f
+                else -> 0.18f
+            }
+        } else {
+            when {
+                east.xor(west) -> 1f
+                north.xor(south) -> 0.35f
+                else -> 0.18f
+            }
+        }
     }
 
     /**
