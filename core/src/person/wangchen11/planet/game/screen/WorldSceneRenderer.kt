@@ -9,8 +9,10 @@ import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
+import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.math.Matrix4
 import person.wangchen11.gdx.assets.GraphicsManager
+import person.wangchen11.gdx.drawable.assertCompiled
 import person.wangchen11.planet.game.BuildingManager
 import person.wangchen11.planet.game.CropManager
 import person.wangchen11.planet.game.CropManager.PlantPhase
@@ -26,12 +28,45 @@ object WorldSceneRenderer {
     private const val TILE_PADDING = 2
     private const val TERRAIN_CHUNK_SIZE = 16
     private const val TERRAIN_CHUNK_BORDER = 1
+    private const val TRANSITION_TEXTURE_ALPHA = 0.42f
     private val terrainChunkMatrix = Matrix4()
     private val terrainCacheBatch = SpriteBatch()
     private val terrainChunks = mutableMapOf<Pair<Int, Int>, TerrainChunk>()
     private var terrainCacheReady = false
     private var cachedMapWidth = -1
     private var cachedMapHeight = -1
+    private val terrainTransitionShader = ShaderProgram(
+        """
+        attribute vec4 a_position;
+        attribute vec4 a_color;
+        attribute vec2 a_texCoord0;
+        uniform mat4 u_projTrans;
+        varying vec4 v_color;
+        varying vec2 v_texCoords;
+
+        void main() {
+            v_color = a_color;
+            v_texCoords = a_texCoord0;
+            gl_Position = u_projTrans * a_position;
+        }
+        """.trimIndent(),
+        """
+        #ifdef GL_ES
+        precision mediump float;
+        #endif
+
+        varying vec4 v_color;
+        varying vec2 v_texCoords;
+        uniform sampler2D u_texture;
+        uniform sampler2D u_maskTexture;
+
+        void main() {
+            vec4 texColor = texture2D(u_texture, v_texCoords);
+            float maskAlpha = texture2D(u_maskTexture, v_texCoords).a;
+            gl_FragColor = vec4(texColor.rgb * v_color.rgb, texColor.a * v_color.a * maskAlpha);
+        }
+        """.trimIndent()
+    ).assertCompiled()
 
     private data class TerrainChunk(
         val chunkX: Int,
@@ -288,15 +323,64 @@ object WorldSceneRenderer {
                     if (mask == 0) return@forEach
 
                     val maskSprite = GraphicsManager.getSprite("terrain_mask_$mask") ?: return@forEach
-                    val color = MapManager.getTerrainColor(targetTerrainId)
-                    maskSprite.setColor(color.r, color.g, color.b, 1f)
-                    maskSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
-                    maskSprite.setPosition((x - originX) * MainScreenConfig.TILE_SIZE, (y - originY) * MainScreenConfig.TILE_SIZE)
-                    maskSprite.draw(batch)
-                    maskSprite.setColor(Color.WHITE)
+                    drawTerrainTransition(
+                        batch = batch,
+                        tileX = x,
+                        tileY = y,
+                        originX = originX,
+                        originY = originY,
+                        targetTerrainId = targetTerrainId,
+                        maskSprite = maskSprite
+                    )
                 }
             }
         }
+    }
+
+    private fun drawTerrainTransition(
+        batch: SpriteBatch,
+        tileX: Int,
+        tileY: Int,
+        originX: Int,
+        originY: Int,
+        targetTerrainId: String,
+        maskSprite: Sprite
+    ) {
+        val variant = overlayVariantFor(tileX, tileY, targetTerrainId)
+        val terrainSprite = GraphicsManager.getSprite("terrain_${targetTerrainId}_$variant")
+        if (terrainSprite == null) {
+            val color = MapManager.getTerrainColor(targetTerrainId)
+            maskSprite.setColor(color.r, color.g, color.b, 1f)
+            maskSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
+            maskSprite.setPosition((tileX - originX) * MainScreenConfig.TILE_SIZE, (tileY - originY) * MainScreenConfig.TILE_SIZE)
+            maskSprite.draw(batch)
+            maskSprite.setColor(Color.WHITE)
+            return
+        }
+
+        batch.flush()
+        val oldShader = batch.shader
+        batch.shader = terrainTransitionShader
+        terrainTransitionShader.setUniformi("u_maskTexture", 1)
+        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE1)
+        maskSprite.texture.bind(1)
+        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0)
+
+        val color = MapManager.getTerrainColor(targetTerrainId)
+        maskSprite.setColor(color.r, color.g, color.b, 1f)
+        maskSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
+        maskSprite.setPosition((tileX - originX) * MainScreenConfig.TILE_SIZE, (tileY - originY) * MainScreenConfig.TILE_SIZE)
+        maskSprite.draw(batch)
+        maskSprite.setColor(Color.WHITE)
+
+        terrainSprite.setColor(1f, 1f, 1f, TRANSITION_TEXTURE_ALPHA)
+        terrainSprite.setSize(MainScreenConfig.TILE_SIZE, MainScreenConfig.TILE_SIZE)
+        terrainSprite.setPosition((tileX - originX) * MainScreenConfig.TILE_SIZE, (tileY - originY) * MainScreenConfig.TILE_SIZE)
+        terrainSprite.draw(batch)
+        terrainSprite.setColor(Color.WHITE)
+
+        batch.flush()
+        batch.shader = oldShader
     }
 
     private fun drawGatherMarkers(batch: SpriteBatch, viewBounds: ViewBounds) {
@@ -337,6 +421,27 @@ object WorldSceneRenderer {
     private fun shouldBlendTo(tileX: Int, tileY: Int, basePriority: Int, targetTerrainId: String): Boolean {
         val neighbor = MapManager.getTerrainAt(tileX, tileY) ?: return false
         return neighbor.id == targetTerrainId && MapManager.getTerrainPriority(neighbor.id) > basePriority
+    }
+
+    private fun overlayVariantFor(tileX: Int, tileY: Int, targetTerrainId: String): Int {
+        val neighborOffsets = arrayOf(
+            0 to 1,
+            1 to 0,
+            0 to -1,
+            -1 to 0,
+            -1 to 1,
+            1 to 1,
+            1 to -1,
+            -1 to -1
+        )
+        neighborOffsets.forEach { (dx, dy) ->
+            val neighbor = MapManager.getTerrainAt(tileX + dx, tileY + dy) ?: return@forEach
+            if (neighbor.id == targetTerrainId) {
+                return MapManager.getTerrainVariantAt(tileX + dx, tileY + dy)
+            }
+        }
+        val seed = (tileX * 92821 + tileY * 68917 + targetTerrainId.hashCode()).toUInt().toInt()
+        return (seed and 3) % 3
     }
 
     private fun drawBuildings(batch: SpriteBatch, viewBounds: ViewBounds) {
