@@ -22,7 +22,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 object WorldSceneRenderer {
-    const val ENABLE_TERRAIN_CHUNK_CACHE = false
+    const val ENABLE_TERRAIN_CHUNK_CACHE = true
     private const val TILE_PADDING = 2
     private const val TERRAIN_CHUNK_SIZE = 16
     private const val TERRAIN_CHUNK_BORDER = 1
@@ -121,23 +121,27 @@ object WorldSceneRenderer {
                 val renderEndY = (tileStartY + tilesHigh - 1 + TERRAIN_CHUNK_BORDER).coerceAtMost(MapManager.MAP_HEIGHT - 1)
                 val renderTilesWide = renderEndX - renderStartX + 1
                 val renderTilesHigh = renderEndY - renderStartY + 1
-                drawTerrainTiles(terrainCacheBatch, renderStartX, renderStartY, renderTilesWide, renderTilesHigh, includeGatherMarkers = false, originX = renderStartX, originY = renderStartY)
-                drawTerrainTransitionTiles(terrainCacheBatch, renderStartX, renderStartY, renderTilesWide, renderTilesHigh, originX = renderStartX, originY = renderStartY)
+                val cacheOriginX = tileStartX - TERRAIN_CHUNK_BORDER
+                val cacheOriginY = tileStartY - TERRAIN_CHUNK_BORDER
+                drawTerrainTiles(terrainCacheBatch, renderStartX, renderStartY, renderTilesWide, renderTilesHigh, includeGatherMarkers = false, originX = cacheOriginX, originY = cacheOriginY)
+                drawTerrainTransitionTiles(terrainCacheBatch, renderStartX, renderStartY, renderTilesWide, renderTilesHigh, originX = cacheOriginX, originY = cacheOriginY)
                 terrainCacheBatch.end()
                 frameBuffer.end()
+                val regionWidth = (tilesWide * MainScreenConfig.TILE_SIZE).toInt()
+                val regionHeight = (tilesHigh * MainScreenConfig.TILE_SIZE).toInt()
                 val region = TextureRegion(
                     frameBuffer.colorBufferTexture,
                     borderPixels,
                     borderPixels,
-                    (tilesWide * MainScreenConfig.TILE_SIZE).toInt(),
-                    (tilesHigh * MainScreenConfig.TILE_SIZE).toInt()
+                    regionWidth,
+                    regionHeight
                 )
                 region.flip(false, true)
                 terrainChunks[chunkX to chunkY] = TerrainChunk(
                     chunkX,
                     chunkY,
-                    (tilesWide * MainScreenConfig.TILE_SIZE).toInt(),
-                    (tilesHigh * MainScreenConfig.TILE_SIZE).toInt(),
+                    regionWidth,
+                    regionHeight,
                     frameBuffer,
                     region
                 )
